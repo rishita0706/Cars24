@@ -1,8 +1,17 @@
-import Footer from "@/components/ui/Footer";
-import Header from "@/components/ui/Header";
+import Fotter from "@/components/Fotter";
+import Header from "@/components/Header";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/AuthContext";
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 
 export default function App({ Component, pageProps }: AppProps) {
-  return <><Header /><Component {...pageProps} /><Footer /></>;
+  return (
+    <AuthProvider>
+      <Header />
+      <Component {...pageProps} />
+      <Fotter />
+      <Toaster richColors />
+    </AuthProvider>
+  );
 }
