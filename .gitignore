@@ -19,7 +19,7 @@ Thumbs.db
 **/Cars24API/bin/
 **/Cars24API/obj/
 **/Cars24API/appsettings.Development.json
-**/Cars24API/appsettings.*.json
+**/Cars24API/appsettings.json
 **/Cars24API/*.user
 **/Cars24API/.vs/
 **/Cars24API/.idea/
