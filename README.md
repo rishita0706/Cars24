@@ -1,1 +1,0 @@
-### Ongoing project, Clone of Cars24 website
