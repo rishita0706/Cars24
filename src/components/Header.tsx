@@ -18,9 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "./dropdown-menu";
-import { Button } from "./button";
-import { useAuth } from "../../context/AuthContext";
+} from "./ui/dropdown-menu";
+import { Button } from "./ui/button";
+import { useAuth } from "../context/AuthContext";
 const Header = () => {
   const navItems = [
     { name: "Buy used car", href: "/buy-car" },
@@ -98,7 +98,7 @@ const Header = () => {
             <span>Wishlist</span>
           </Button>
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger>
               <Button
                 variant="ghost"
                 className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 hover:text-orange-500"
@@ -127,7 +127,7 @@ const Header = () => {
             <DropdownMenuContent align="end" className="w-72">
               {user ? (
                 <>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem>
                     <Link
                       href="/profile"
                       className="w-full flex items-center gap-2"
@@ -147,7 +147,7 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem>
                     <Link
                       href="/login"
                       className="w-full px-4 py-3 text-center text-white bg-orange-500 rounded-md hover:bg-orange-600 transition-colors"
@@ -162,7 +162,7 @@ const Header = () => {
 
               {/* Common menu items */}
               {menuItems.map(({ label, icon: Icon, link }) => (
-                <DropdownMenuItem asChild key={label}>
+                <DropdownMenuItem key={label}>
                   <Link href={link} className="flex items-center gap-3 w-full">
                     <Icon className="h-4 w-4 text-muted-foreground" />
                     {label}

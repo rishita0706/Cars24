@@ -131,7 +131,7 @@ function LoaderCard() {
   );
 }
 const index = () => {
-  const [priceRange, setPriceRange] = useState([0, 1000000]);
+  const [priceRange, setPriceRange] = useState<number[]>([0, 1000000]);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [cars, setCars] = useState<Car[] | null>(null);
   useEffect(() => {
@@ -159,9 +159,12 @@ const index = () => {
                     max={1000000}
                     step={10000}
                     value={priceRange}
-                    onValueChange={setPriceRange}
-                    className="mt-2"
-                  />
+                    onValueChange={(value) => {
+                        if (Array.isArray(value)) {
+                        setPriceRange([...value]);
+                        }
+                    }}
+                    />
                   <div className="flex justify-between mt-2 text-sm text-gray-600">
                     <span>₹{priceRange[0]}</span>
                     <span>₹{priceRange[1]}</span>

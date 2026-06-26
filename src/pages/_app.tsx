@@ -1,4 +1,4 @@
-import Fotter from "@/components/Fotter";
+import Fotter from "@/components/Footer";
 import Header from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";

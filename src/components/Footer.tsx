@@ -1,6 +1,12 @@
 import React from "react";
 import Link from "next/link";
-import { Facebook, Twitter, Instagram, Youtube, Linkedin } from "lucide-react";
+import {
+  FaFacebook,
+  FaTwitter,
+  FaInstagram,
+  FaYoutube,
+  FaLinkedin,
+} from "react-icons/fa";
 
 const companyLinks = [
   { name: "About Us", href: "/about" },
@@ -29,13 +35,13 @@ const supportLinks = [
 ];
 
 const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com" },
-  { icon: Twitter, href: "https://twitter.com" },
-  { icon: Instagram, href: "https://instagram.com" },
-  { icon: Youtube, href: "https://youtube.com" },
-  { icon: Linkedin, href: "https://linkedin.com" },
+  { icon: FaFacebook, href: "https://facebook.com" },
+  { icon: FaTwitter, href: "https://twitter.com" },
+  { icon: FaInstagram, href: "https://instagram.com" },
+  { icon: FaYoutube, href: "https://youtube.com" },
+  { icon: FaLinkedin, href: "https://linkedin.com" },
 ];
-const Fotter = () => {
+const Footer = () => {
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -160,4 +166,4 @@ const Fotter = () => {
   );
 };
 
-export default Fotter;
+export default Footer;
