@@ -8,7 +8,7 @@ public class User
 {
     [BsonId]
     [BsonRepresentation(BsonType.ObjectId)]
-    public string Id { get; set; }
+    public string Id { get; set; } = string.Empty;
 
     [Required]
     public string FullName { get; set; } = string.Empty;
