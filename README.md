@@ -123,13 +123,6 @@ App will start at `http://localhost:3000`.
 
 --- -->
 
-## Demo
-
-🔗 [Live Demo](cars24-three.vercel.app)
-
-
----
-
 ## Future Improvements
 
 - [ ] JWT-based authentication (currently session state is client-side only)
