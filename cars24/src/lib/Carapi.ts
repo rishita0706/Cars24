@@ -1,4 +1,4 @@
-const BASE_URL = "https://cars-24-clone-net-nextjs.onrender.com/api/Car";
+const BASE_URL = "http://localhost:5213/api/Car";
 
 type CarDetails = {
   title: string;

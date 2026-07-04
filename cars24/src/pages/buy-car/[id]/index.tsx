@@ -124,10 +124,15 @@ const index = () => {
       };
       const response = await createBooking(user.id, booking);
       if (response.id) {
-        toast.success("Bookings listed Successfully");
+        toast.success("Booking confirmed successfully");
         router.push(`/bookings`);
+      } else {
+        toast.error("Failed to complete purchase");
       }
-    } catch (error) {}
+    } catch (error: any) {
+      console.error(error);
+      toast.error(error?.message || "Failed to complete purchase");
+    }
   };
 
   const validatestep = () => {

@@ -136,7 +136,7 @@ const FeaturesForm: React.FC<FeaturesFormProps> = ({
               onClick={addFeature}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              <Plus className="h-5 w-5 mr-1" /> Add Add
+              <Plus className="h-5 w-5 mr-1" /> Add
             </button>
           </div>
 

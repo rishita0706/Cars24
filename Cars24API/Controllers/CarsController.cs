@@ -39,7 +39,7 @@ namespace Cars24API.Controllers
                 car.Emi,
                 car.Price,
                 car.Location,
-                image = car.Images
+                image = car.Images.FirstOrDefault() ?? string.Empty
             });
             return Ok(result);
         }

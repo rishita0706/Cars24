@@ -19,5 +19,6 @@ namespace Cars24API.Models
         public string PaymentMethod { get; set; } = null!;
         public string LoanRequired { get; set; } = null!;
         public string DownPayment { get; set; } = null!;
+        public string LoanStatus { get; set; } = string.Empty; // Set by server: "Not Required" | "In Process" | "Approved"
     }
 }

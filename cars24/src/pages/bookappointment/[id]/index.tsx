@@ -4,7 +4,6 @@ import {
   Calendar,
   Clock,
   MapPin,
-  Car,
   AlertCircle,
   Home,
   Building2,
@@ -16,8 +15,9 @@ import { createAppointment } from "@/lib/Appointmentapi";
 
 const BookAppointmentPage = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id } = router.query; // carId, comes from the /bookappointment/[id] route
   const { user } = useAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     scheduledDate: "",
     scheduledTime: "",
@@ -59,8 +59,16 @@ const BookAppointmentPage = () => {
       toast.error("No car selected for this appointment");
       return;
     }
+    setSubmitting(true);
     try {
-      const appointment = { carId: id, ...formData };
+      const appointment = {
+        carId: id,
+        scheduledDate: formData.scheduledDate,
+        scheduledTime: formData.scheduledTime,
+        location: formData.location,
+        appointmentType: formData.appointmentType,
+        notes: formData.notes,
+      };
       const response = await createAppointment(user.id, appointment);
       if (response.id) {
         toast.success("Appointment booked successfully");
@@ -71,6 +79,8 @@ const BookAppointmentPage = () => {
     } catch (error: any) {
       console.error(error);
       toast.error(error?.message || "Failed to book appointment");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -230,9 +240,12 @@ const BookAppointmentPage = () => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                disabled={submitting}
+                className={`w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium ${
+                  submitting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
               >
-                Confirm Appointment
+                {submitting ? "Booking..." : "Confirm Appointment"}
               </button>
             </form>
           </div>

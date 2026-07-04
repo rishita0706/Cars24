@@ -24,6 +24,6 @@ public class User
     [Phone]
     public string Phone { get; set; } = string.Empty;
 
-    public string? BookingId { get; set; } = null; 
-    public string? AppointmentId { get; set; } = null; 
+    public List<string> BookingId { get; set; } = new List<string>();
+    public List<string> AppointmentId { get; set; } = new List<string>();
 }

@@ -26,5 +26,17 @@ namespace Cars24API.Services
         {
             return await _bookings.Find(_ => true).ToListAsync();
         }
+
+        public async Task<bool> UpdateAsync(string id, Booking booking)
+        {
+            var result = await _bookings.ReplaceOneAsync(b => b.Id == id, booking);
+            return result.MatchedCount > 0;
+        }
+
+        public async Task<bool> DeleteAsync(string id)
+        {
+            var result = await _bookings.DeleteOneAsync(b => b.Id == id);
+            return result.DeletedCount > 0;
+        }
     }
 }

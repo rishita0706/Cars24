@@ -144,7 +144,8 @@ const PurchasedCarsPage = () => {
     );
   }
   const formatPrice = (price: string) => {
-    return "₹ " + parseInt(price).toLocaleString("en-IN");
+    const numeric = parseInt(String(price).replace(/[^0-9]/g, ""), 10) || 0;
+    return "₹ " + numeric.toLocaleString("en-IN");
   };
 
   return (
@@ -215,7 +216,7 @@ const PurchasedCarsPage = () => {
                       <div className="bg-amber-50 p-3 rounded-lg">
                         <p className="text-sm text-amber-700">EMI from</p>
                         <p className="text-xl font-bold text-amber-900">
-                          ₹ {parseInt(data.car.emi).toLocaleString("en-IN")}
+                          {formatPrice(data.car.emi)}
                           /month
                         </p>
                       </div>

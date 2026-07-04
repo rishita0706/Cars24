@@ -24,20 +24,24 @@ namespace Cars24API.Controllers
             _carService = carService;
         }
         [HttpPost]
-        public async Task<IActionResult> CreateAppointment([FromQuery] string userId, [FromBody] Booking booking)
+        public async Task<IActionResult> CreateBooking([FromQuery] string userId, [FromBody] Booking booking)
         {
             if (booking == null || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(booking.CarId))
                 return BadRequest("Userid and carid is not present");
 
-            await _bookingService.CreateAsync(booking);
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound("User not found");
-            if (user.BookingId == null)
-            {
-                user.BookingId = new List<string>();
-            }
-            user.BookingId.Add(booking.Id);
+            user.BookingId ??= new List<string>(); // legacy user docs may still have this stored as null
+
+            // Loan status is derived server-side from whether the customer requested a loan
+            booking.LoanStatus = string.Equals(booking.LoanRequired, "yes", StringComparison.OrdinalIgnoreCase)
+                ? "In Process"
+                : "Not Required";
+
+            await _bookingService.CreateAsync(booking);
+
+            user.BookingId.Add(booking.Id!);
             await _userService.UpdateAsync(user.Id, user);
             return CreatedAtAction(nameof(GetbookingById), new { id = booking.Id }, booking);
         }
@@ -55,6 +59,7 @@ namespace Cars24API.Controllers
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound();
+            user.BookingId ??= new List<string>(); // legacy user docs may still have this stored as null
             var results = new List<bookingDto>();
             foreach (var bookingid in user.BookingId)
             {
@@ -70,6 +75,44 @@ namespace Cars24API.Controllers
                 }
             }
             return Ok(results);
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateBooking(string id, [FromBody] Booking booking)
+        {
+            if (booking == null)
+                return BadRequest("Booking data is required");
+
+            var existing = await _bookingService.GetByIdAsynch(id);
+            if (existing == null)
+                return NotFound("Booking not found");
+
+            booking.Id = id; // keep the original id, ignore any id sent in the body
+            var updated = await _bookingService.UpdateAsync(id, booking);
+            if (!updated)
+                return NotFound("Booking not found");
+
+            return Ok(booking);
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteBooking(string id, [FromQuery] string? userId)
+        {
+            var existing = await _bookingService.GetByIdAsynch(id);
+            if (existing == null)
+                return NotFound("Booking not found");
+
+            await _bookingService.DeleteAsync(id);
+
+            // Also detach the booking reference from the owning user, if provided
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var user = await _userService.GetByIdAsync(userId);
+                if (user != null && (user.BookingId?.Remove(id) ?? false))
+                {
+                    await _userService.UpdateAsync(user.Id, user);
+                }
+            }
+
+            return NoContent();
         }
     }
 }

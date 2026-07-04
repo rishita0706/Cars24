@@ -29,15 +29,20 @@ namespace Cars24API.Controllers
             if (appointment == null || string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(appointment.CarId))
                 return BadRequest("Userid and carid is not present");
 
-            await _appointmentService.CreateAsync(appointment);
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound("User not found");
-            if (user.AppointmentId == null)
+            user.AppointmentId ??= new List<string>(); // legacy user docs may still have this stored as null
+
+            // A freshly created appointment always starts out as "upcoming"
+            if (string.IsNullOrEmpty(appointment.Status))
             {
-                user.AppointmentId = new List<string>();
+                appointment.Status = "upcoming";
             }
-            user.AppointmentId.Add(appointment.Id);
+
+            await _appointmentService.CreateAsync(appointment);
+
+            user.AppointmentId.Add(appointment.Id!);
             await _userService.UpdateAsync(user.Id, user);
             return CreatedAtAction(nameof(GetAppointmentById), new { id = appointment.Id }, appointment);
         }
@@ -55,6 +60,7 @@ namespace Cars24API.Controllers
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound();
+            user.AppointmentId ??= new List<string>(); // legacy user docs may still have this stored as null
             var results = new List<AppointmentDto>();
             foreach (var appointmentid in user.AppointmentId)
             {
@@ -70,6 +76,44 @@ namespace Cars24API.Controllers
                 }
             }
             return Ok(results);
+        }
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAppointment(string id, [FromBody] Appointment appointment)
+        {
+            if (appointment == null)
+                return BadRequest("Appointment data is required");
+
+            var existing = await _appointmentService.GetByIdAsynch(id);
+            if (existing == null)
+                return NotFound("Appointment not found");
+
+            appointment.Id = id; // keep the original id, ignore any id sent in the body
+            var updated = await _appointmentService.UpdateAsync(id, appointment);
+            if (!updated)
+                return NotFound("Appointment not found");
+
+            return Ok(appointment);
+        }
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteAppointment(string id, [FromQuery] string? userId)
+        {
+            var existing = await _appointmentService.GetByIdAsynch(id);
+            if (existing == null)
+                return NotFound("Appointment not found");
+
+            await _appointmentService.DeleteAsync(id);
+
+            // Also detach the appointment reference from the owning user, if provided
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var user = await _userService.GetByIdAsync(userId);
+                if (user != null && (user.AppointmentId?.Remove(id) ?? false))
+                {
+                    await _userService.UpdateAsync(user.Id, user);
+                }
+            }
+
+            return NoContent();
         }
     }
 }

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Calendar, Clock, MapPin, Car, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { getappointmentbyuser } from "@/lib/Appointmentapi";
+import { getappointmentbyuser, cancelAppointment } from "@/lib/Appointmentapi";
+import { toast } from "sonner";
 
 const AppointmentsPage = () => {
   // Mock appointments data matching MongoDB schema
@@ -55,22 +56,38 @@ const AppointmentsPage = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState<any>(null);
-  useEffect(() => {
-    const fetchappointments = async () => {
-      try {
-        if (user) {
-          const car = await getappointmentbyuser(user?.id);
-          setAppointments(car);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
+  const fetchappointments = async () => {
+    try {
+      if (user) {
+        const car = await getappointmentbyuser(user?.id);
+        setAppointments(car);
       }
-    };
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchappointments();
   }, [user]);
+
+  const handleCancel = async (appointmentId: string) => {
+    if (!user) return;
+    try {
+      const success = await cancelAppointment(appointmentId, user.id);
+      if (success) {
+        toast.success("Appointment cancelled");
+        fetchappointments();
+      } else {
+        toast.error("Failed to cancel appointment");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to cancel appointment");
+    }
+  };
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -160,11 +177,7 @@ const AppointmentsPage = () => {
                               "Are you sure you want to cancel this appointment?"
                             )
                           ) {
-                            // Handle cancellation
-                            console.log(
-                              "Cancelling appointment:",
-                              appointment.appointment.id
-                            );
+                            handleCancel(appointment.appointment.id);
                           }
                         }}
                       >

@@ -1,4 +1,4 @@
-const BASE_URL = "https://cars-24-clone-net-nextjs.onrender.com/api/Booking";
+const BASE_URL = "http://localhost:5213/api/Booking";
 
 export const createBooking = async (userid: string, Booking: any) => {
   const response = await fetch(`${BASE_URL}?userId=${userid}`, {
@@ -8,7 +8,13 @@ export const createBooking = async (userid: string, Booking: any) => {
     },
     body: JSON.stringify(Booking),
   });
-  return response.json();
+  const data = await response.json();
+  if (!response.ok) {
+    // Backend returns a plain string like "User not found" for 400/404 errors
+    const message = typeof data === "string" ? data : "Failed to create booking";
+    throw new Error(message);
+  }
+  return data;
 };
 
 export const getBookingbyid = async (id: string) => {

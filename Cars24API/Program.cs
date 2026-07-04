@@ -7,7 +7,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-string connectionstring = builder.Configuration.GetConnectionString("Cars24DB");
+string? connectionstring = builder.Configuration.GetConnectionString("Cars24DB");
+if (string.IsNullOrEmpty(connectionstring))
+{
+    throw new InvalidOperationException(
+        "Missing 'ConnectionStrings:Cars24DB' in appsettings.json. Add your MongoDB connection string before running the API.");
+}
 builder.Services.AddSingleton<UserService>();
 builder.Services.AddSingleton<CarService>();
 builder.Services.AddSingleton<BookingService>();
@@ -30,7 +35,9 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseHttpsRedirection();
+// NOTE: HTTPS redirection is intentionally not used here. The frontend (cars24)
+// is hard-coded to call http://localhost:5213, so redirecting to https would break
+// those requests during local development.
 app.MapGet("/", () => "Welcome to Cars24 API");
 app.MapGet("/db-check", async () =>
 {
