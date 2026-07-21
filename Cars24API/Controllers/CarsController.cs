@@ -1,3 +1,4 @@
+// Controllers/CarsController.cs  (updated — original 3 actions untouched, 2 new ones added)
 using Microsoft.AspNetCore.Mvc;
 using Cars24API.Models;
 using Cars24API.Services;
@@ -10,9 +11,11 @@ namespace Cars24API.Controllers
     public class CarController : ControllerBase
     {
         private readonly CarService _carservice;
-        public CarController(CarService carService)
+        private readonly CarSearchService _searchService;
+        public CarController(CarService carService, CarSearchService searchService)
         {
             _carservice = carService;
+            _searchService = searchService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
@@ -52,6 +55,25 @@ namespace Cars24API.Controllers
             }
             await _carservice.CreateAsync(car);
             return CreatedAtAction(nameof(GetById), new { id = car.Id }, car);
+        }
+
+        // GET /api/Car/suggestions?q=swi
+        // Static literal segment "suggestions" takes routing precedence over the
+        // "{id}" parameter route above (same reason "summaries" already coexists
+        // with GetById without conflict), so no route ordering changes needed.
+        [HttpGet("suggestions")]
+        public async Task<IActionResult> GetSuggestions([FromQuery] string? q)
+        {
+            var suggestions = await _searchService.GetSuggestionsAsync(q);
+            return Ok(suggestions);
+        }
+
+        // GET /api/Car/search?query=swift&fuel=Petrol&minYear=2018&...
+        [HttpGet("search")]
+        public async Task<IActionResult> Search([FromQuery] SearchRequest request)
+        {
+            var results = await _searchService.SearchAsync(request);
+            return Ok(results);
         }
     }
 }

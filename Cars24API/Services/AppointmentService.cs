@@ -6,12 +6,9 @@ namespace Cars24API.Services
     public class AppointmentService
     {
         private readonly IMongoCollection<Appointment> _appointment;
-        public AppointmentService(IConfiguration config)
+        public AppointmentService(MongoContext context)
         {
-            var client = new MongoClient(config.GetConnectionString("Cars24DB"));
-
-            var database = client.GetDatabase(config["MongoDB:DatabaseName"]);
-            _appointment = database.GetCollection<Appointment>("Appointments");
+            _appointment = context.Appointments;
         }
         public async Task CreateAsync(Appointment appointment)
         {

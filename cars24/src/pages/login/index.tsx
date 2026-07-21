@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import { Mail, Lock, AlertCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";

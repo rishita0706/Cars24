@@ -7,12 +7,9 @@ public class UserService
 {
     private readonly IMongoCollection<User> _users;
 
-    public UserService(IConfiguration config)
+    public UserService(MongoContext context)
     {
-        var client = new MongoClient(config.GetConnectionString("Cars24DB"));
-
-        var database = client.GetDatabase(config["MongoDB:DatabaseName"]);
-        _users = database.GetCollection<User>("Users");
+        _users = context.Users;
     }
 
     public async Task<User?> GetByEmailAsync(string email) =>

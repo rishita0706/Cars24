@@ -6,12 +6,9 @@ namespace Cars24API.Services
     public class CarService
     {
         private readonly IMongoCollection<Car> _cars;
-        public CarService(IConfiguration config)
+        public CarService(MongoContext context)
         {
-            var client = new MongoClient(config.GetConnectionString("Cars24DB"));
-
-            var database = client.GetDatabase(config["MongoDB:DatabaseName"]);
-            _cars = database.GetCollection<Car>("Cars");
+            _cars = context.Cars;
         }
         public async Task<List<Car>> GetAllAsync() =>
             await _cars.Find(_ => true).ToListAsync();

@@ -6,11 +6,9 @@ namespace Cars24API.Services
     public class BookingService
     {
         private readonly IMongoCollection<Booking> _bookings;
-        public BookingService(IConfiguration config)
+        public BookingService(MongoContext context)
         {
-            var client = new MongoClient(config.GetConnectionString("Cars24DB"));
-            var database = client.GetDatabase(config["MongoDB:DatabaseName"]);
-            _bookings = database.GetCollection<Booking>("Bookings");
+            _bookings = context.Bookings;
         }
         public async Task CreateAsync(Booking booking)
         {
