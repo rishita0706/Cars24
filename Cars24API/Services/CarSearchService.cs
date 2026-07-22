@@ -39,6 +39,7 @@ namespace Cars24API.Services
         private const int HighlightMatch = 35;
         private const int FilterMatchPerField = 5;
         private const int RecencyCap = 15;
+        private const int PopularityCap = 20;
 
         public CarSearchService(MongoContext context)
         {
@@ -133,7 +134,7 @@ namespace Cars24API.Services
         // ---------------------------------------------------------------
         // Search: GET /api/Car/search
         // ---------------------------------------------------------------
-        public async Task<List<SearchResult>> SearchAsync(SearchRequest request)
+        public async Task<SearchResponse> SearchAsync(SearchRequest request)
         {
             var mongoFilter = BuildMongoFilter(request);
             var cars = await _context.Cars.Find(mongoFilter).ToListAsync();
@@ -144,7 +145,7 @@ namespace Cars24API.Services
             cars = ApplyStringRangeFilters(cars, request);
 
             var hasQuery = !string.IsNullOrWhiteSpace(request.Query);
-            var results = new List<SearchResult>();
+            var scored = new List<SearchResult>();
 
             foreach (var car in cars)
             {
@@ -154,10 +155,45 @@ namespace Cars24API.Services
                 // drop it - passing the structured filters alone isn't a search match.
                 if (hasQuery && !matchedQuery) continue;
 
-                results.Add(new SearchResult { Car = car, Score = score });
+                scored.Add(new SearchResult { Car = car, Score = score });
             }
 
-            return results.OrderByDescending(r => r.Score).ToList();
+            var sorted = ApplySort(scored, request.SortBy);
+
+            var totalResults = sorted.Count;
+            var pageSize = request.PageSize <= 0 ? 10 : Math.Min(request.PageSize, 50);
+            var totalPages = totalResults == 0 ? 0 : (int)Math.Ceiling(totalResults / (double)pageSize);
+            var page = request.Page <= 0 ? 1 : request.Page;
+            if (totalPages > 0 && page > totalPages) page = totalPages;
+
+            var pageResults = sorted
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return new SearchResponse
+            {
+                TotalResults = totalResults,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages,
+                Results = pageResults
+            };
+        }
+
+        private static List<SearchResult> ApplySort(List<SearchResult> results, string? sortBy)
+        {
+            return (sortBy?.Trim().ToLowerInvariant()) switch
+            {
+                "price_asc" => results.OrderBy(r => ParsePriceValue(r.Car.Price) ?? double.MaxValue).ToList(),
+                "price_desc" => results.OrderByDescending(r => ParsePriceValue(r.Car.Price) ?? double.MinValue).ToList(),
+                "year_asc" => results.OrderBy(r => r.Car.Specs.Year).ToList(),
+                "year_desc" => results.OrderByDescending(r => r.Car.Specs.Year).ToList(),
+                "km_asc" => results.OrderBy(r => ParseNumeric(r.Car.Specs.Km) ?? double.MaxValue).ToList(),
+                "recent" => results.OrderByDescending(r => GetCreatedAt(r.Car.Id)).ToList(),
+                // "relevance" (default) and anything unrecognized fall back to Score.
+                _ => results.OrderByDescending(r => r.Score).ToList(),
+            };
         }
 
         private (int Score, bool MatchedQuery) ComputeScore(Car car, SearchRequest request, bool hasQuery)
@@ -234,18 +270,34 @@ namespace Cars24API.Services
             var recencyScore = (int)Math.Max(0, RecencyCap - (ageDays / 30.0));
             score += recencyScore;
 
-            // Popularity: no view-count/popularity field exists on Car yet, so this
-            // intentionally contributes 0. Wire this up once such a field exists.
-            score += 0;
+            // Popularity: every 5 views is worth 1 point, capped so a handful of
+            // very-viewed listings can't completely drown out relevance/filters.
+            score += Math.Min(PopularityCap, car.ViewCount / 5);
 
             return (score, matchedQuery);
+        }
+
+        private static List<string> EffectiveFuels(SearchRequest request)
+        {
+            var values = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.Fuel)) values.Add(request.Fuel.Trim());
+            if (request.Fuels != null) values.AddRange(request.Fuels.Where(f => !string.IsNullOrWhiteSpace(f)));
+            return values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        private static List<string> EffectiveTransmissions(SearchRequest request)
+        {
+            var values = new List<string>();
+            if (!string.IsNullOrWhiteSpace(request.Transmission)) values.Add(request.Transmission.Trim());
+            if (request.Transmissions != null) values.AddRange(request.Transmissions.Where(t => !string.IsNullOrWhiteSpace(t)));
+            return values.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
         private static int CountProvidedFilters(SearchRequest request)
         {
             var count = 0;
-            if (!string.IsNullOrWhiteSpace(request.Fuel)) count++;
-            if (!string.IsNullOrWhiteSpace(request.Transmission)) count++;
+            if (EffectiveFuels(request).Count > 0) count++;
+            if (EffectiveTransmissions(request).Count > 0) count++;
             if (!string.IsNullOrWhiteSpace(request.Owner)) count++;
             if (!string.IsNullOrWhiteSpace(request.Location)) count++;
             if (request.Year.HasValue) count++;
@@ -265,16 +317,26 @@ namespace Cars24API.Services
             var builder = Builders<Car>.Filter;
             var filter = builder.Empty;
 
-            if (!string.IsNullOrWhiteSpace(request.Fuel))
+            var fuels = EffectiveFuels(request);
+            if (fuels.Count > 0)
             {
-                var escaped = Regex.Escape(request.Fuel.Trim());
-                filter &= builder.Regex(c => c.Specs.Fuel, new BsonRegularExpression($"^{escaped}$", "i"));
+                var fuelOr = builder.Or(fuels.Select(f =>
+                {
+                    var escaped = Regex.Escape(f);
+                    return builder.Regex(c => c.Specs.Fuel, new BsonRegularExpression($"^{escaped}$", "i"));
+                }));
+                filter &= fuelOr;
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Transmission))
+            var transmissions = EffectiveTransmissions(request);
+            if (transmissions.Count > 0)
             {
-                var escaped = Regex.Escape(request.Transmission.Trim());
-                filter &= builder.Regex(c => c.Specs.Transmission, new BsonRegularExpression($"^{escaped}$", "i"));
+                var transmissionOr = builder.Or(transmissions.Select(t =>
+                {
+                    var escaped = Regex.Escape(t);
+                    return builder.Regex(c => c.Specs.Transmission, new BsonRegularExpression($"^{escaped}$", "i"));
+                }));
+                filter &= transmissionOr;
             }
 
             if (!string.IsNullOrWhiteSpace(request.Owner))

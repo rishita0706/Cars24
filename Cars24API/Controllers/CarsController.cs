@@ -25,6 +25,18 @@ namespace Cars24API.Controllers
             {
                 return NotFound();
             }
+
+            // Popularity signal for search ranking - never let this fail the
+            // actual page load, a view just goes uncounted in that case.
+            try
+            {
+                await _carservice.IncrementViewCountAsync(id);
+            }
+            catch
+            {
+                // intentionally swallowed - non-critical
+            }
+
             return Ok(car);
         }
         [HttpGet("summaries")]
@@ -68,7 +80,8 @@ namespace Cars24API.Controllers
             return Ok(suggestions);
         }
 
-        // GET /api/Car/search?query=swift&fuel=Petrol&minYear=2018&...
+        // GET /api/Car/search?query=swift&fuel=Petrol&minYear=2018&page=1&pageSize=10&sortBy=relevance
+        // Returns a SearchResponse: { totalResults, page, pageSize, totalPages, results: [{ car, score }] }
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] SearchRequest request)
         {

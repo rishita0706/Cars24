@@ -9,6 +9,14 @@ namespace Cars24API.Models
 
         public string? Transmission { get; set; }
 
+        // Multi-select variants (checkbox filters send repeated query params,
+        // e.g. ?fuels=Petrol&fuels=Diesel). Kept separate from the single
+        // `Fuel`/`Transmission` above for backward compatibility with any
+        // existing single-value caller.
+        public List<string>? Fuels { get; set; }
+
+        public List<string>? Transmissions { get; set; }
+
         public string? Location { get; set; }
 
         public string? Owner { get; set; }

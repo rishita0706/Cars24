@@ -25,4 +25,9 @@ public class Car
     public Specs Specs { get; set; } = new Specs();
     public List<string> Features { get; set; } = new List<string>();
     public List<string> Highlights { get; set; } = new List<string>();
+
+    // Popularity signal for search ranking. Incremented each time a car's
+    // detail page is fetched (see CarController.GetById). Never set by the
+    // client - Create() always starts a new listing at 0.
+    public int ViewCount { get; set; } = 0;
 }

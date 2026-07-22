@@ -18,6 +18,15 @@ namespace Cars24API.Services
         }
         public async Task CreateAsync(Car car) =>
             await _cars.InsertOneAsync(car);
+
+        // Fire-and-forget-safe: called from CarController.GetById on every
+        // detail-page view, feeds the popularity component of search ranking.
+        public async Task IncrementViewCountAsync(string id)
+        {
+            var filter = Builders<Car>.Filter.Eq(c => c.Id, id);
+            var update = Builders<Car>.Update.Inc(c => c.ViewCount, 1);
+            await _cars.UpdateOneAsync(filter, update);
+        }
     }
 
 }
