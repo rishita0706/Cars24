@@ -88,6 +88,8 @@ export type CarSearchParams = {
   query?: string;
   fuel?: string;
   transmission?: string;
+  fuels?: string[];
+  transmissions?: string[];
   location?: string;
   owner?: string;
   year?: number;
@@ -112,6 +114,8 @@ export const searchCars = async (
   if (params.query) query.append("query", params.query);
   if (params.fuel) query.append("fuel", params.fuel);
   if (params.transmission) query.append("transmission", params.transmission);
+  params.fuels?.forEach((f) => query.append("fuels", f));
+  params.transmissions?.forEach((t) => query.append("transmissions", t));
   if (params.location) query.append("location", params.location);
   if (params.owner) query.append("owner", params.owner);
   if (params.year !== undefined) query.append("year", String(params.year));
