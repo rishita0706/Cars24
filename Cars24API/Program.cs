@@ -93,6 +93,7 @@ builder.Services.AddSingleton<CarService>();
 builder.Services.AddSingleton<BookingService>();
 builder.Services.AddSingleton<AppointmentService>();
 builder.Services.AddSingleton<CarSearchService>();
+builder.Services.AddSingleton<ServiceHubService>();
 
 builder.Services.AddCors(options =>
 {
