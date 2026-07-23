@@ -7,9 +7,17 @@ import AdvancedFilters, {
 } from "@/components/buy-car/AdvancedFilters";
 import SearchBar from "@/components/buy-car/SearchBar";
 import { useDebounce } from "@/hooks/useDebounce";
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useLocation } from "@/context/LocationContext";
+import { getServiceHubs, type ServiceHub } from "@/lib/ServiceHubapi";
+import { ChevronLeft, ChevronRight, Heart, MapPin } from "lucide-react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import React, { useEffect, useState } from "react";
+
+// Leaflet touches `window`, so this must never be rendered on the server.
+const NearbyHubsMap = dynamic(() => import("@/components/location/NearbyHubsMap"), {
+  ssr: false,
+});
 
 interface CarCardData {
   id: string;
@@ -58,14 +66,19 @@ function toCardData(item: SearchResultItem): CarCardData {
 const PAGE_SIZE = 9;
 
 const BuyCarPage = () => {
+  const { city } = useLocation();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
+  // Geo-fencing default: once a city is known, results are restricted to it
+  // until the user explicitly opts out.
+  const [restrictToCity, setRestrictToCity] = useState(true);
 
   const [cars, setCars] = useState<CarCardData[] | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [hubs, setHubs] = useState<ServiceHub[]>([]);
 
   // Debounce free-text query so every keystroke doesn't trigger a full search
   // request (the SearchBar's own suggestion dropdown has its own, separate
@@ -75,7 +88,7 @@ const BuyCarPage = () => {
   // Reset to page 1 whenever the user changes what they're searching/filtering for.
   useEffect(() => {
     setPage(1);
-  }, [debouncedQuery, filters]);
+  }, [debouncedQuery, filters, restrictToCity, city?.name]);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,6 +97,9 @@ const BuyCarPage = () => {
 
     searchCars({
       query: debouncedQuery || undefined,
+      // Geo-fencing: only listings in the detected/selected city, unless the
+      // user has switched it off for this session.
+      location: restrictToCity && city ? city.name : undefined,
       fuels: filters.fuel.length > 0 ? filters.fuel : undefined,
       transmissions: filters.transmission.length > 0 ? filters.transmission : undefined,
       minYear: filters.minYear ?? undefined,
@@ -118,7 +134,26 @@ const BuyCarPage = () => {
     // array reference itself, so a new array with the same values doesn't
     // trigger an unnecessary re-fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, filters.fuel.join(","), filters.transmission.join(","), filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage, filters.priceRange[0], filters.priceRange[1], filters.sortBy, page]);
+  }, [debouncedQuery, filters.fuel.join(","), filters.transmission.join(","), filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage, filters.priceRange[0], filters.priceRange[1], filters.sortBy, page, restrictToCity, city?.name]);
+
+  // Fetch nearby hubs for the current city (independent of the car search above).
+  useEffect(() => {
+    if (!city) {
+      setHubs([]);
+      return;
+    }
+    let cancelled = false;
+    getServiceHubs(city.name)
+      .then((result) => {
+        if (!cancelled) setHubs(result);
+      })
+      .catch(() => {
+        if (!cancelled) setHubs([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [city?.name]);
 
   return (
     <div className="bg-gray-100">
@@ -127,13 +162,27 @@ const BuyCarPage = () => {
           {/* filter */}
           <div className="md:col-span-1 space-y-6">
             <AdvancedFilters filters={filters} onChange={setFilters} />
+
+            {city && hubs.length > 0 && (
+              <div className="bg-white p-4 rounded-lg shadow">
+                <h3 className="font-semibold mb-3">Nearby Hubs in {city.name}</h3>
+                <NearbyHubsMap center={city} hubs={hubs} />
+                <ul className="mt-3 space-y-1 text-xs text-gray-500">
+                  {hubs.slice(0, 3).map((hub) => (
+                    <li key={hub.id}>{hub.name}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* cars grid */}
           <div className="md:col-span-3">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
               <div>
-                <h1 className="text-2xl font-bold">Used Cars in Delhi NCR</h1>
+                <h1 className="text-2xl font-bold">
+                  Used Cars {city ? `in ${city.name}` : ""}
+                </h1>
                 {cars !== null && !error && (
                   <p className="text-sm text-gray-500 mt-1">
                     {totalResults} {totalResults === 1 ? "car" : "cars"} found
@@ -149,6 +198,24 @@ const BuyCarPage = () => {
                 }}
               />
             </div>
+
+            {city && (
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <MapPin className="h-4 w-4" />
+                <span>
+                  {restrictToCity
+                    ? `Showing cars in ${city.name}`
+                    : "Showing cars in all cities"}
+                </span>
+                <button
+                  type="button"
+                  className="text-blue-600 hover:underline"
+                  onClick={() => setRestrictToCity((v) => !v)}
+                >
+                  {restrictToCity ? "Show all cities" : `Limit to ${city.name}`}
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="text-center py-12 text-red-600 bg-red-50 rounded-lg">
