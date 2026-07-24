@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { MapPin, ChevronDown, LocateFixed } from "lucide-react";
+import { MapPin, ChevronDown, LocateFixed, Search, Check } from "lucide-react";
 import { CITIES } from "@/lib/geo";
 import { useLocation } from "@/context/LocationContext";
 
 export default function LocationPicker() {
-  const { city, status, detectedLabel, detect, setCity } = useLocation();
+  const { city, status, source, detectedLabel, detect, setCity } = useLocation();
   const [open, setOpen] = useState(false);
+  const [filterQuery, setFilterQuery] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -18,57 +19,91 @@ export default function LocationPicker() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const filteredCities = CITIES.filter((c) =>
+    c.name.toLowerCase().includes(filterQuery.toLowerCase().trim())
+  );
+
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative inline-block text-left">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-blue-600"
-        title={detectedLabel ?? undefined}
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-gray-800 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-full transition-all shadow-sm"
+        title={detectedLabel ? `Detected: ${detectedLabel}` : undefined}
       >
-        <MapPin className="h-4 w-4" />
-        <span className="max-w-[110px] truncate">
-          {status === "detecting" ? "Detecting..." : city?.name ?? "Select city"}
+        <MapPin className="h-4 w-4 text-orange-500 flex-shrink-0 animate-bounce" />
+        <span className="max-w-[120px] truncate">
+          {status === "detecting" ? "Detecting..." : city?.name ?? "Select City"}
         </span>
-        <ChevronDown className="h-3 w-3" />
+        <ChevronDown className={`h-3.5 w-3.5 text-gray-500 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-30 p-2">
+        <div className="absolute left-0 lg:left-auto lg:right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-xl z-50 p-3 overflow-hidden">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-100">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Choose Location</span>
+            {source && (
+              <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
+                {source === "gps" ? "GPS Located" : source === "ip" ? "IP Located" : "Manual"}
+              </span>
+            )}
+          </div>
+
           <button
             type="button"
-            className="w-full flex items-center gap-2 px-2 py-2 text-sm text-blue-600 hover:bg-gray-50 rounded"
+            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50/70 hover:bg-blue-100/80 rounded-lg transition-colors mb-2 text-left"
             onClick={() => {
               detect();
               setOpen(false);
             }}
           >
-            <LocateFixed className="h-4 w-4" />
-            Use my current location
+            <LocateFixed className="h-4 w-4 flex-shrink-0 text-blue-600" />
+            <span>Use current location</span>
           </button>
 
           {detectedLabel && (
-            <p className="px-2 pb-1 text-xs text-gray-400">Near {detectedLabel}</p>
+            <p className="px-3 pb-2 text-xs text-gray-500 truncate">
+              Near <span className="font-medium text-gray-700">{detectedLabel}</span>
+            </p>
           )}
 
-          <div className="my-1 border-t border-gray-100" />
+          <div className="relative my-2">
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search city..."
+              value={filterQuery}
+              onChange={(e) => setFilterQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900"
+            />
+          </div>
 
-          <div className="max-h-56 overflow-auto">
-            {CITIES.map((c) => (
-              <button
-                key={c.name}
-                type="button"
-                className={`w-full text-left px-2 py-1.5 text-sm rounded hover:bg-gray-50 ${
-                  city?.name === c.name ? "font-semibold text-blue-600" : "text-gray-700"
-                }`}
-                onClick={() => {
-                  setCity(c.name);
-                  setOpen(false);
-                }}
-              >
-                {c.name}
-              </button>
-            ))}
+          <div className="max-h-52 overflow-y-auto pr-1 space-y-1">
+            {filteredCities.length === 0 ? (
+              <p className="text-xs text-gray-400 py-3 text-center">No matching cities</p>
+            ) : (
+              filteredCities.map((c) => {
+                const isSelected = city?.name === c.name;
+                return (
+                  <button
+                    key={c.name}
+                    type="button"
+                    className={`w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm rounded-lg transition-colors text-left ${
+                      isSelected
+                        ? "bg-blue-600 text-white font-medium shadow-sm"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }`}
+                    onClick={() => {
+                      setCity(c.name);
+                      setOpen(false);
+                    }}
+                  >
+                    <span>{c.name}</span>
+                    {isSelected && <Check className="h-4 w-4 text-white" />}
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       )}

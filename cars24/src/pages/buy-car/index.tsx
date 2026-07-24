@@ -9,7 +9,7 @@ import SearchBar from "@/components/buy-car/SearchBar";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLocation } from "@/context/LocationContext";
 import { getServiceHubs, type ServiceHub } from "@/lib/ServiceHubapi";
-import { ChevronLeft, ChevronRight, Heart, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, MapPin, Navigation, Building2, Wrench, Store } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from "react";
@@ -34,7 +34,7 @@ interface CarCardData {
 
 function LoaderCard() {
   return (
-    <div className="bg-white rounded-lg shadow-md animate-pulse overflow-hidden">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 animate-pulse overflow-hidden">
       <div className="h-48 bg-gray-200"></div>
       <div className="p-4 space-y-2">
         <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -59,7 +59,7 @@ function toCardData(item: SearchResultItem): CarCardData {
     emi: car.emi,
     price: car.price,
     location: car.location,
-    image: car.images?.[0] ?? "",
+    image: car.images?.[0] ?? "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg",
   };
 }
 
@@ -78,14 +78,16 @@ const BuyCarPage = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  
+  // Hubs & Map filter state
   const [hubs, setHubs] = useState<ServiceHub[]>([]);
+  const [activeHubType, setActiveHubType] = useState<string>("All");
+  const [selectedHubId, setSelectedHubId] = useState<string | null>(null);
 
   // Debounce free-text query so every keystroke doesn't trigger a full search
-  // request (the SearchBar's own suggestion dropdown has its own, separate
-  // debounce - this one drives the actual results grid below).
   const debouncedQuery = useDebounce(query, 350);
 
-  // Reset to page 1 whenever the user changes what they're searching/filtering for.
+  // Reset to page 1 whenever search filters or geo-fencing changes
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery, filters, restrictToCity, city?.name]);
@@ -97,8 +99,7 @@ const BuyCarPage = () => {
 
     searchCars({
       query: debouncedQuery || undefined,
-      // Geo-fencing: only listings in the detected/selected city, unless the
-      // user has switched it off for this session.
+      // Geo-fencing: only listings in the detected/selected city
       location: restrictToCity && city ? city.name : undefined,
       fuels: filters.fuel.length > 0 ? filters.fuel : undefined,
       transmissions: filters.transmission.length > 0 ? filters.transmission : undefined,
@@ -130,13 +131,23 @@ const BuyCarPage = () => {
     return () => {
       cancelled = true;
     };
-    // Depend on the joined string form of fuel/transmission rather than the
-    // array reference itself, so a new array with the same values doesn't
-    // trigger an unnecessary re-fetch.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedQuery, filters.fuel.join(","), filters.transmission.join(","), filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage, filters.priceRange[0], filters.priceRange[1], filters.sortBy, page, restrictToCity, city?.name]);
+  }, [
+    debouncedQuery,
+    filters.fuel.join(","),
+    filters.transmission.join(","),
+    filters.minYear,
+    filters.maxYear,
+    filters.minMileage,
+    filters.maxMileage,
+    filters.priceRange[0],
+    filters.priceRange[1],
+    filters.sortBy,
+    page,
+    restrictToCity,
+    city?.name,
+  ]);
 
-  // Fetch nearby hubs for the current city (independent of the car search above).
+  // Fetch nearby hubs for the current city
   useEffect(() => {
     if (!city) {
       setHubs([]);
@@ -155,70 +166,154 @@ const BuyCarPage = () => {
     };
   }, [city?.name]);
 
+  const filteredHubs = hubs.filter(
+    (h) => activeHubType === "All" || h.type === activeHubType
+  );
+
   return (
-    <div className="bg-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-white text-black">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* filter */}
-          <div className="md:col-span-1 space-y-6">
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          
+          {/* Filters & Nearby Hubs Interactive Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
             <AdvancedFilters filters={filters} onChange={setFilters} />
 
-            {city && hubs.length > 0 && (
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h3 className="font-semibold mb-3">Nearby Hubs in {city.name}</h3>
-                <NearbyHubsMap center={city} hubs={hubs} />
-                <ul className="mt-3 space-y-1 text-xs text-gray-500">
-                  {hubs.slice(0, 3).map((hub) => (
-                    <li key={hub.id}>{hub.name}</li>
+            {/* Interactive Location Hubs Map Card */}
+            {city && (
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-sm flex items-center gap-1.5">
+                      <Navigation className="h-4 w-4 text-blue-600" />
+                      Hubs & Facilities in {city.name}
+                    </h3>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Service centers, test drive hubs & pickup points
+                    </p>
+                  </div>
+                </div>
+
+                {/* Hub type filter pills */}
+                <div className="flex gap-1 mb-3 overflow-x-auto pb-1 text-[11px] font-medium">
+                  {[
+                    { id: "All", label: "All" },
+                    { id: "Hub", label: "Hubs" },
+                    { id: "ServiceCenter", label: "Services" },
+                    { id: "PickupPoint", label: "Pickup" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      className={`px-2.5 py-1 rounded-full whitespace-nowrap transition-colors ${
+                        activeHubType === tab.id
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                      onClick={() => setActiveHubType(tab.id)}
+                    >
+                      {tab.label}
+                    </button>
                   ))}
-                </ul>
+                </div>
+
+                <NearbyHubsMap
+                  center={city}
+                  hubs={filteredHubs}
+                  selectedHubId={selectedHubId}
+                  onSelectHub={(h) => setSelectedHubId(h.id)}
+                />
+
+                {/* Hub List below map */}
+                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {filteredHubs.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-2">No facilities found for this filter</p>
+                  ) : (
+                    filteredHubs.map((hub) => {
+                      const isSelected = selectedHubId === hub.id;
+                      return (
+                        <div
+                          key={hub.id}
+                          onClick={() => setSelectedHubId(hub.id)}
+                          className={`p-2.5 rounded-xl border text-xs cursor-pointer transition-all ${
+                            isSelected
+                              ? "border-blue-600 bg-blue-50/50 shadow-sm"
+                              : "border-gray-100 hover:border-gray-300 bg-gray-50/50"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between font-semibold text-gray-900 mb-1">
+                            <span className="truncate pr-2">{hub.name}</span>
+                            <span
+                              className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                                hub.type === "Hub"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : hub.type === "ServiceCenter"
+                                  ? "bg-orange-100 text-orange-700"
+                                  : "bg-green-100 text-green-700"
+                              }`}
+                            >
+                              {hub.type}
+                            </span>
+                          </div>
+                          <p className="text-gray-500 text-[11px] line-clamp-1">{hub.address}</p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             )}
           </div>
 
-          {/* cars grid */}
-          <div className="md:col-span-3">
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-2">
-              <div>
-                <h1 className="text-2xl font-bold">
-                  Used Cars {city ? `in ${city.name}` : ""}
-                </h1>
-                {cars !== null && !error && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {totalResults} {totalResults === 1 ? "car" : "cars"} found
-                  </p>
-                )}
+          {/* Cars Grid & Results Header */}
+          <div className="lg:col-span-3">
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-3">
+                <div>
+                  <h1 className="text-2xl font-extrabold text-gray-900">
+                    Used Cars {restrictToCity && city ? `in ${city.name}` : "Across India"}
+                  </h1>
+                  {cars !== null && !error && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Showing <span className="font-semibold text-gray-900">{totalResults}</span> verified {totalResults === 1 ? "car" : "cars"}
+                    </p>
+                  )}
+                </div>
+                <SearchBar
+                  value={query}
+                  onChange={setQuery}
+                  onSubmit={(v) => {
+                    setQuery(v);
+                    setPage(1);
+                  }}
+                />
               </div>
-              <SearchBar
-                value={query}
-                onChange={setQuery}
-                onSubmit={(v) => {
-                  setQuery(v);
-                  setPage(1);
-                }}
-              />
+
+              {/* Geo-fencing Status Bar */}
+              {city && (
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <MapPin className="h-3.5 w-3.5 text-orange-500" />
+                    <span>
+                      {restrictToCity
+                        ? `Geo-fenced: Only showing listings in ${city.name}`
+                        : "Location filter disabled: Showing cars from all locations"}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className="font-semibold text-blue-600 hover:text-blue-800 underline underline-offset-2 transition-colors"
+                    onClick={() => setRestrictToCity((v) => !v)}
+                  >
+                    {restrictToCity ? "Show listings in all cities" : `Restrict listings to ${city.name}`}
+                  </button>
+                </div>
+              )}
             </div>
 
-            {city && (
-              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                <MapPin className="h-4 w-4" />
-                <span>
-                  {restrictToCity
-                    ? `Showing cars in ${city.name}`
-                    : "Showing cars in all cities"}
-                </span>
-                <button
-                  type="button"
-                  className="text-blue-600 hover:underline"
-                  onClick={() => setRestrictToCity((v) => !v)}
-                >
-                  {restrictToCity ? "Show all cities" : `Limit to ${city.name}`}
-                </button>
-              </div>
-            )}
-
             {error && (
-              <div className="text-center py-12 text-red-600 bg-red-50 rounded-lg">
+              <div className="text-center py-12 text-red-600 bg-red-50 rounded-2xl border border-red-100">
                 {error}
               </div>
             )}
@@ -233,50 +328,53 @@ const BuyCarPage = () => {
                       <Link
                         key={car.id}
                         href={`/buy-car/${car.id}`}
-                        className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                        className="group bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between"
                       >
-                        <div className="relative h-48">
-                          <img
-                            src={car.image}
-                            alt={car.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <button className="absolute top-2 right-2 p-1.5 bg-white/80 rounded-full hover:bg-white">
-                            <Heart className="h-4 w-4 text-gray-500 hover:text-red-500" />
-                          </button>
+                        <div>
+                          <div className="relative h-48 overflow-hidden bg-gray-100">
+                            <img
+                              src={car.image}
+                              alt={car.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                              }}
+                              className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-sm hover:bg-white transition-colors"
+                            >
+                              <Heart className="h-4 w-4 text-gray-500 hover:text-red-500" />
+                            </button>
+                            {car.location && (
+                              <span className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-md text-white px-2.5 py-1 rounded-full text-[10px] font-medium flex items-center gap-1">
+                                <MapPin className="h-3 w-3 text-orange-400" />
+                                {car.location}
+                              </span>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-bold text-base text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                              {car.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-500 mb-4 bg-gray-50 p-2 rounded-lg">
+                              <span>{car.km} km</span>
+                              <span>•</span>
+                              <span>{car.transmission}</span>
+                              <span>•</span>
+                              <span>{car.fuel}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-lg mb-2">
-                            {car.title}
-                          </h3>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="text-sm text-gray-600">
-                              {car.km} km
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {car.transmission}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {car.fuel}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {car.owner}
-                            </div>
+
+                        <div className="p-4 pt-0 border-t border-gray-100 flex items-center justify-between mt-auto">
+                          <div>
+                            <div className="text-[10px] text-gray-400 uppercase font-semibold">EMI starts at</div>
+                            <div className="font-bold text-sm text-gray-900">{car.emi}</div>
                           </div>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="text-sm text-gray-600">
-                                EMI from
-                              </div>
-                              <div className="font-semibold">{car.emi}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600">Price</div>
-                              <div className="font-semibold">{car.price}</div>
-                            </div>
-                          </div>
-                          <div className="mt-2 text-xs text-gray-500">
-                            {car.location}
+                          <div className="text-right">
+                            <div className="text-[10px] text-gray-400 uppercase font-semibold">Fixed Price</div>
+                            <div className="font-extrabold text-base text-blue-600">{car.price}</div>
                           </div>
                         </div>
                       </Link>
@@ -285,8 +383,23 @@ const BuyCarPage = () => {
             )}
 
             {!error && cars !== null && cars.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                No cars match your search. Try adjusting your filters.
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+                <MapPin className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-gray-800 mb-1">No cars found</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  {restrictToCity && city
+                    ? `We currently don't have available cars matching your filters in ${city.name}.`
+                    : "No cars match your search criteria."}
+                </p>
+                {restrictToCity && city && (
+                  <Button
+                    variant="outline"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-semibold"
+                    onClick={() => setRestrictToCity(false)}
+                  >
+                    View listings from all cities across India
+                  </Button>
+                )}
               </div>
             )}
 
@@ -296,17 +409,19 @@ const BuyCarPage = () => {
                   variant="outline"
                   disabled={page <= 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="rounded-xl text-xs font-medium"
                 >
                   <ChevronLeft className="h-4 w-4 mr-1" />
-                  Prev
+                  Previous
                 </Button>
-                <span className="text-sm text-gray-600">
+                <span className="text-xs font-semibold text-gray-600">
                   Page {page} of {totalPages}
                 </span>
                 <Button
                   variant="outline"
                   disabled={page >= totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  className="rounded-xl text-xs font-medium"
                 >
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />

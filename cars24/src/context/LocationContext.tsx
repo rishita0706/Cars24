@@ -10,7 +10,6 @@ type LocationContextType = {
   status: LocationStatus;
   error: string | null;
   // Best-effort human-readable label from reverse geocoding, e.g. "Sector 62, Noida".
-  // Display-only - never used for filtering, see lib/geo.ts.
   detectedLabel: string | null;
   detect: () => void;
   setCity: (cityName: string) => void;
@@ -22,8 +21,18 @@ const STORAGE_KEY = "cars24_location";
 
 type StoredLocation = { city: City; source: LocationSource };
 
+const defaultFallbackContext: LocationContextType = {
+  city: CITIES[0], // Default snapping city (Delhi)
+  source: "manual",
+  status: "ready",
+  error: null,
+  detectedLabel: null,
+  detect: () => {},
+  setCity: () => {},
+};
+
 export function LocationProvider({ children }: { children: React.ReactNode }) {
-  const [city, setCityState] = useState<City | null>(null);
+  const [city, setCityState] = useState<City | null>(CITIES[0]);
   const [source, setSource] = useState<LocationSource>(null);
   const [status, setStatus] = useState<LocationStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +43,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       const payload: StoredLocation = { city: nextCity, source: nextSource };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch {
-      // localStorage unavailable (private browsing, etc.) - non-fatal, just won't persist.
+      // localStorage unavailable - non-fatal
     }
   };
 
@@ -46,8 +55,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     setDetectedLabel(null);
     persist(nearest, nextSource);
 
-    // Fire-and-forget: only improves the displayed label, never blocks
-    // or changes which city listings are filtered by.
     reverseGeocodeLabel(coords)
       .then((label) => setDetectedLabel(label))
       .catch(() => {});
@@ -65,7 +72,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setCity = (cityName: string) => {
-    const match = CITIES.find((c) => c.name === cityName);
+    const match = CITIES.find((c) => c.name.toLowerCase() === cityName.toLowerCase());
     if (!match) return;
     setCityState(match);
     setSource("manual");
@@ -80,14 +87,15 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       if (raw) {
         const parsed: StoredLocation = JSON.parse(raw);
         if (parsed?.city?.name) {
-          setCityState(parsed.city);
+          const matched = CITIES.find((c) => c.name.toLowerCase() === parsed.city.name.toLowerCase()) || parsed.city;
+          setCityState(matched);
           setSource(parsed.source ?? null);
           setStatus("ready");
           return;
         }
       }
     } catch {
-      // corrupt/unavailable storage - fall through to a fresh detect
+      // Storage unavailable or corrupt
     }
     detect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -102,10 +110,10 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useLocation() {
+export function useLocation(): LocationContextType {
   const ctx = useContext(LocationContext);
   if (!ctx) {
-    throw new Error("useLocation must be used within a LocationProvider");
+    return defaultFallbackContext;
   }
   return ctx;
 }

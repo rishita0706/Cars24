@@ -14,12 +14,11 @@ namespace Cars24API.Controllers
             _service = service;
         }
 
-        // GET /api/ServiceHub?city=Delhi
-        // City omitted -> returns every hub across all supported cities.
+        // GET /api/ServiceHub?city=Delhi&type=Hub
         [HttpGet]
-        public async Task<IActionResult> GetByCity([FromQuery] string? city)
+        public async Task<IActionResult> GetByCity([FromQuery] string? city, [FromQuery] string? type)
         {
-            var hubs = await _service.GetByCityAsync(city);
+            var hubs = await _service.GetByCityAsync(city, type);
             return Ok(hubs);
         }
     }

@@ -347,9 +347,25 @@ namespace Cars24API.Services
 
             if (!string.IsNullOrWhiteSpace(request.Location))
             {
-                // Contains, not exact - locations tend to be free text ("Delhi, India").
-                var escaped = Regex.Escape(request.Location.Trim());
-                filter &= builder.Regex(c => c.Location, new BsonRegularExpression(escaped, "i"));
+                var loc = request.Location.Trim();
+                var aliases = new List<string> { loc };
+                if (loc.Equals("Gurugram", StringComparison.OrdinalIgnoreCase) || loc.Equals("Gurgaon", StringComparison.OrdinalIgnoreCase))
+                {
+                    aliases.Add("Gurugram");
+                    aliases.Add("Gurgaon");
+                }
+                else if (loc.Equals("Bengaluru", StringComparison.OrdinalIgnoreCase) || loc.Equals("Bangalore", StringComparison.OrdinalIgnoreCase))
+                {
+                    aliases.Add("Bengaluru");
+                    aliases.Add("Bangalore");
+                }
+
+                var locOr = builder.Or(aliases.Distinct().Select(a =>
+                {
+                    var escaped = Regex.Escape(a);
+                    return builder.Regex(c => c.Location, new BsonRegularExpression(escaped, "i"));
+                }));
+                filter &= locOr;
             }
 
             if (request.Year.HasValue)

@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Button } from "./ui/button";
+import LocationPicker from "./location/LocationPicker";
 import { useAuth } from "@/context/AuthContext";
 const Header = () => {
   const navItems = [
@@ -38,14 +39,6 @@ const Header = () => {
     { label: "Become Our Partner", icon: Users, link: "/partner" },
     { label: "FAQ", icon: HelpCircle, link: "/faq" },
   ];
-  // const user = {
-  //   id: "1",
-  //   avatar_url: "https://github.com/shadcn.png",
-  //   email: "giris@gmail.com",
-  //   full_name: "John Doe",
-  //   phone: "+1234567890",
-  //   created_at: new Date().toISOString(),
-  // };
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
@@ -54,7 +47,7 @@ const Header = () => {
         className="mx-auto flex max-w-7xl items-center justify-between p-4 lg:px-8"
         aria-label="Global"
       >
-        <div className="flex lg:flex-1">
+        <div className="flex lg:flex-1 items-center gap-4">
           <Link href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">Cars24</span>
             <div className="flex items-center">
@@ -64,9 +57,14 @@ const Header = () => {
               <span className="text-orange-500 font-bold text-lg">24</span>
             </div>
           </Link>
+
+          <div className="hidden sm:block border-l border-gray-200 pl-4">
+            <LocationPicker />
+          </div>
         </div>
 
-        <div className="flex lg:hidden">
+        <div className="flex items-center gap-2 lg:hidden">
+          <LocationPicker />
           <button
             type="button"
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
