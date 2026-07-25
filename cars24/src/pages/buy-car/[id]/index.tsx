@@ -1,7 +1,10 @@
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
+import { useLocation } from "@/context/LocationContext";
 import { createBooking } from "@/lib/Bookingapi";
 import { getcarByid } from "@/lib/Carapi";
+import { getRecommendedPrice, type PriceRecommendation } from "@/lib/Pricingapi";
+import RecommendedPrice from "@/components/buy-car/RecommendedPrice";
 import {
   AlertCircle,
   Calendar,
@@ -62,8 +65,10 @@ const index = () => {
   });
   const router = useRouter();
   const { id } = router.query;
+  const { city } = useLocation();
   const [carDetails, setcarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [priceRecommendation, setPriceRecommendation] = useState<PriceRecommendation | null>(null);
   const [step, setstep] = useState(1);
   useEffect(() => {
     if (!id) return;
@@ -79,6 +84,15 @@ const index = () => {
     }
     fetchCar();
   }, [id]);
+
+  // Independent of the main car fetch above so a pricing-engine hiccup never
+  // blocks the page from showing car details.
+  useEffect(() => {
+    if (!id) return;
+    getRecommendedPrice(id as string, city?.name)
+      .then(setPriceRecommendation)
+      .catch(() => setPriceRecommendation(null));
+  }, [id, city?.name]);
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -187,6 +201,11 @@ const index = () => {
                   </p>
                 </div>
               </div>
+
+              {priceRecommendation && (
+                <RecommendedPrice recommendation={priceRecommendation} />
+              )}
+
               {/* Specs Grid */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-gray-50 p-3 rounded-lg">
