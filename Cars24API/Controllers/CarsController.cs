@@ -1,4 +1,4 @@
-// Controllers/CarsController.cs  (updated — original 3 actions untouched, 2 new ones added)
+// Controllers/CarsController.cs
 using Microsoft.AspNetCore.Mvc;
 using Cars24API.Models;
 using Cars24API.Services;
@@ -12,10 +12,12 @@ namespace Cars24API.Controllers
     {
         private readonly CarService _carservice;
         private readonly CarSearchService _searchService;
-        public CarController(CarService carService, CarSearchService searchService)
+        private readonly PricingService _pricingService;
+        public CarController(CarService carService, CarSearchService searchService, PricingService pricingService)
         {
             _carservice = carService;
             _searchService = searchService;
+            _pricingService = pricingService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
@@ -39,6 +41,24 @@ namespace Cars24API.Controllers
 
             return Ok(car);
         }
+
+        // GET /api/Car/{id}/recommended-price?city=Delhi
+        // Returns a PriceRecommendation: { basePrice, recommendedPrice, adjustmentPercent, factors: [...] }
+        // `city` is optional - typically the user's geo-fenced city from LocationContext
+        // on the frontend. Omitting it just skips the regional-demand factor.
+        [HttpGet("{id}/recommended-price")]
+        public async Task<IActionResult> GetRecommendedPrice(string id, [FromQuery] string? city)
+        {
+            var car = await _carservice.GetByIdAsync(id);
+            if (car == null)
+            {
+                return NotFound();
+            }
+
+            var recommendation = _pricingService.ComputeRecommendedPrice(car, city);
+            return Ok(recommendation);
+        }
+
         [HttpGet("summaries")]
         public async Task<IActionResult> GetCarsummaries()
         {
