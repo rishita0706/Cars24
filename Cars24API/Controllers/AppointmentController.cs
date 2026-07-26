@@ -12,16 +12,18 @@ namespace Cars24API.Controllers
         private readonly AppointmentService _appointmentService;
         private readonly UserService _userService;
         private readonly CarService _carService;
+        private readonly NotificationService _notificationService;
         public class AppointmentDto
         {
             public required Appointment Appointment { get; set; }
             public Car? Car { get; set; }
         }
-        public AppointmentController(AppointmentService appointmentService, UserService userService, CarService carService)
+        public AppointmentController(AppointmentService appointmentService, UserService userService, CarService carService, NotificationService notificationService)
         {
             _appointmentService = appointmentService;
             _userService = userService;
             _carService = carService;
+            _notificationService = notificationService;
         }
         [HttpPost]
         public async Task<IActionResult> CreateAppointment([FromQuery] string userId, [FromBody] Appointment appointment)
@@ -44,6 +46,15 @@ namespace Cars24API.Controllers
 
             user.AppointmentId.Add(appointment.Id!);
             await _userService.UpdateAsync(user.Id, user);
+
+            // Push notification is best-effort - NotificationService swallows
+            // its own errors, so this never blocks/fails the appointment itself.
+            await _notificationService.SendToUserAsync(
+                user,
+                "Appointment Confirmed",
+                $"Your inspection appointment is confirmed for {appointment.ScheduledDate} at {appointment.ScheduledTime}.",
+                NotificationService.NotificationCategory.AppointmentAndBookingUpdates);
+
             return CreatedAtAction(nameof(GetAppointmentById), new { id = appointment.Id }, appointment);
         }
         [HttpGet("{id}")]

@@ -23,6 +23,77 @@ public class UserAuthController : ControllerBase
 
         return Ok(user);
     }
+
+    public class FcmTokenRequest
+    {
+        public string Token { get; set; } = string.Empty;
+    }
+
+    // POST /api/UserAuth/{id}/fcm-token
+    // Registers a browser/device's FCM token against this user. Safe to call
+    // repeatedly - duplicate tokens are ignored.
+    [HttpPost("{id}/fcm-token")]
+    public async Task<IActionResult> RegisterFcmToken(string id, [FromBody] FcmTokenRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Token))
+            return BadRequest(new { message = "Token is required." });
+
+        var user = await _userService.GetByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.FcmTokens ??= new List<string>();
+        if (!user.FcmTokens.Contains(request.Token))
+        {
+            user.FcmTokens.Add(request.Token);
+            await _userService.UpdateAsync(user.Id, user);
+        }
+
+        return Ok(new { message = "Token registered." });
+    }
+
+    // DELETE /api/UserAuth/{id}/fcm-token?token=...
+    // Called when the user turns push notifications off for this device.
+    [HttpDelete("{id}/fcm-token")]
+    public async Task<IActionResult> UnregisterFcmToken(string id, [FromQuery] string token)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.FcmTokens ??= new List<string>();
+        if (user.FcmTokens.Remove(token))
+        {
+            await _userService.UpdateAsync(user.Id, user);
+        }
+
+        return NoContent();
+    }
+
+    // GET /api/UserAuth/{id}/notification-preferences
+    [HttpGet("{id}/notification-preferences")]
+    public async Task<IActionResult> GetNotificationPreferences(string id)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        return Ok(user.NotificationPreferences ?? new NotificationPreferences());
+    }
+
+    // PUT /api/UserAuth/{id}/notification-preferences
+    [HttpPut("{id}/notification-preferences")]
+    public async Task<IActionResult> UpdateNotificationPreferences(string id, [FromBody] NotificationPreferences preferences)
+    {
+        var user = await _userService.GetByIdAsync(id);
+        if (user == null)
+            return NotFound("User not found.");
+
+        user.NotificationPreferences = preferences;
+        await _userService.UpdateAsync(user.Id, user);
+        return Ok(user.NotificationPreferences);
+    }
+
     [HttpPost("signup")]
     public async Task<IActionResult> Signup([FromBody] User user)
     {

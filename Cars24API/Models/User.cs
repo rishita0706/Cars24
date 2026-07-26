@@ -26,4 +26,9 @@ public class User
 
     public List<string> BookingId { get; set; } = new List<string>();
     public List<string> AppointmentId { get; set; } = new List<string>();
+
+    // One browser/device can register more than one token over time (e.g. a
+    // user visiting from phone + laptop) - a push goes to every token on file.
+    public List<string> FcmTokens { get; set; } = new List<string>();
+    public NotificationPreferences NotificationPreferences { get; set; } = new NotificationPreferences();
 }

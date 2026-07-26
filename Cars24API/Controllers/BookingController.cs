@@ -12,16 +12,18 @@ namespace Cars24API.Controllers
         private readonly BookingService _bookingService;
         private readonly UserService _userService;
         private readonly CarService _carService;
+        private readonly NotificationService _notificationService;
         public class bookingDto
         {
             public required Booking Booking { get; set; }
             public Car? Car { get; set; }
         }
-        public BookingController(BookingService bookingService, UserService userService, CarService carService)
+        public BookingController(BookingService bookingService, UserService userService, CarService carService, NotificationService notificationService)
         {
             _bookingService = bookingService;
             _userService = userService;
             _carService = carService;
+            _notificationService = notificationService;
         }
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromQuery] string userId, [FromBody] Booking booking)
@@ -43,6 +45,16 @@ namespace Cars24API.Controllers
 
             user.BookingId.Add(booking.Id!);
             await _userService.UpdateAsync(user.Id, user);
+
+            // Push notification is best-effort - NotificationService swallows
+            // its own errors, so this never blocks/fails the booking itself.
+            var car = await _carService.GetByIdAsync(booking.CarId);
+            await _notificationService.SendToUserAsync(
+                user,
+                "Booking Confirmed",
+                $"Your booking for {car?.Title ?? "your car"} has been confirmed.",
+                NotificationService.NotificationCategory.AppointmentAndBookingUpdates);
+
             return CreatedAtAction(nameof(GetbookingById), new { id = booking.Id }, booking);
         }
         [HttpGet("{id}")]
