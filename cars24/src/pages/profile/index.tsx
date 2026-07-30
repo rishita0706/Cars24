@@ -2,6 +2,7 @@ import { Bell, Calendar, Car, LogOut, Mail, Settings, User } from "lucide-react"
 import { useRouter } from "next/router";
 import React, { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import NotificationSettings from "@/components/profile/NotificationSettings";
 
 const index = () => {
   const { user, signOut } = useAuth();
@@ -69,6 +70,10 @@ const index = () => {
                         <span className="font-medium">{user?.phone}</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <NotificationSettings userId={user.id} />
                   </div>
                 </div>
 
