@@ -1,4 +1,4 @@
-import { getToken } from "firebase/messaging";
+import { getToken, onMessage } from "firebase/messaging";
 import { getFirebaseMessaging } from "./firebase";
 import { registerFcmToken, unregisterFcmToken } from "./userapi";
 
@@ -74,4 +74,20 @@ export async function disablePushNotifications(userId: string): Promise<void> {
       // ignore
     }
   }
+}
+
+// The service worker's onBackgroundMessage (see pages/api/firebase-messaging-sw.js.ts)
+// only fires when the Cars24 tab is NOT focused/open. While the tab IS open
+// and focused, FCM delivers the message straight to this listener instead -
+// without it, a push sent while you're actively using the site would arrive
+// but never visibly show anything. Returns an unsubscribe function.
+export async function listenForForegroundMessages(
+  onNotification: (title: string, body: string) => void
+): Promise<() => void> {
+  const messaging = await getFirebaseMessaging();
+  if (!messaging) return () => {};
+
+  return onMessage(messaging, (payload) => {
+    onNotification(payload.notification?.title ?? "Cars24", payload.notification?.body ?? "");
+  });
 }
