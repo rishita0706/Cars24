@@ -11,6 +11,8 @@ namespace Cars24API.Services
         private readonly UserService _userService;
         private readonly bool _isConfigured;
 
+        private const string LocalServiceAccountFileName = "firebase-service-account.json";
+
         public enum NotificationCategory
         {
             AppointmentAndBookingUpdates,
@@ -28,9 +30,19 @@ namespace Cars24API.Services
 
             if (string.IsNullOrWhiteSpace(serviceAccountJson))
             {
+                var localPath = Path.Combine(Directory.GetCurrentDirectory(), LocalServiceAccountFileName);
+                if (File.Exists(localPath))
+                {
+                    serviceAccountJson = File.ReadAllText(localPath);
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(serviceAccountJson))
+            {
                 _isConfigured = false;
                 _logger.LogWarning(
-                    "FIREBASE_SERVICE_ACCOUNT_JSON is not set - push notifications are disabled.");
+                    "No Firebase credentials found (checked FIREBASE_SERVICE_ACCOUNT_JSON env var and " +
+                    "./{FileName}) - push notifications are disabled.", LocalServiceAccountFileName);
                 return;
             }
 
