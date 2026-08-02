@@ -13,17 +13,19 @@ namespace Cars24API.Controllers
         private readonly UserService _userService;
         private readonly CarService _carService;
         private readonly NotificationService _notificationService;
+        private readonly ReferralService _referralService;
         public class bookingDto
         {
             public required Booking Booking { get; set; }
             public Car? Car { get; set; }
         }
-        public BookingController(BookingService bookingService, UserService userService, CarService carService, NotificationService notificationService)
+        public BookingController(BookingService bookingService, UserService userService, CarService carService, NotificationService notificationService, ReferralService referralService)
         {
             _bookingService = bookingService;
             _userService = userService;
             _carService = carService;
             _notificationService = notificationService;
+            _referralService = referralService;
         }
         [HttpPost]
         public async Task<IActionResult> CreateBooking([FromQuery] string userId, [FromBody] Booking booking)
@@ -54,6 +56,22 @@ namespace Cars24API.Controllers
                 "Booking Confirmed",
                 $"Your booking for {car?.Title ?? "your car"} has been confirmed.",
                 NotificationService.NotificationCategory.AppointmentAndBookingUpdates);
+
+            // Referral reward must run AFTER the notification call above, not
+            // before: TryGrantRewardAsync updates WalletBalance via a targeted
+            // atomic field update, but SendToUserAsync may itself do a full
+            // User replace (stale-token cleanup) using this same in-memory
+            // `user` snapshot - running it first would silently overwrite the
+            // reward. This is best-effort like the notification: a wallet
+            // hiccup should never fail the booking that earned it.
+            try
+            {
+                await _referralService.TryGrantRewardAsync(user);
+            }
+            catch
+            {
+                // swallowed - non-critical to the booking itself
+            }
 
             return CreatedAtAction(nameof(GetbookingById), new { id = booking.Id }, booking);
         }

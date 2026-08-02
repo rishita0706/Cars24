@@ -10,9 +10,11 @@ namespace Cars24API.Controllers;
 public class UserAuthController : ControllerBase
 {
     private readonly UserService _userService;
-    public UserAuthController(UserService userService)
+    private readonly ReferralService _referralService;
+    public UserAuthController(UserService userService, ReferralService referralService)
     {
         _userService = userService;
+        _referralService = referralService;
     }
     [HttpGet("{id}")]
     public async Task<IActionResult> GetUserById(string id)
@@ -95,13 +97,43 @@ public class UserAuthController : ControllerBase
     }
 
     [HttpPost("signup")]
-    public async Task<IActionResult> Signup([FromBody] User user)
+    public async Task<IActionResult> Signup([FromBody] User submitted)
     {
-        var existingUser = await _userService.GetByEmailAsync(user.Email);
+        var existingUser = await _userService.GetByEmailAsync(submitted.Email);
         if (existingUser != null)
             return BadRequest(new { message = "User already exists." });
 
-        user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
+        // Signup binds straight onto the domain User model for convenience,
+        // which means a crafted request body could otherwise set
+        // server-controlled fields directly - walletBalance, fcmTokens, even
+        // Id. That was a latent issue before; now that a wallet with real
+        // point values exists, sending {..., walletBalance: 999999} in the
+        // signup payload would be free money if left unguarded. Rebuild a
+        // clean User from only the fields a signup request is actually
+        // allowed to supply, rather than trusting the bound object as-is.
+        var user = new User
+        {
+            Email = submitted.Email,
+            Password = BCrypt.Net.BCrypt.HashPassword(submitted.Password),
+            FullName = submitted.FullName,
+            Phone = submitted.Phone,
+            ReferralCode = await _referralService.GenerateUniqueCodeAsync()
+        };
+
+        // A referral code can only be attached at signup - there's no
+        // "apply code to my existing account" endpoint, which is deliberate
+        // (see ReferralService for the anti-abuse reasoning). An unknown or
+        // mistyped code is silently ignored rather than failing the signup.
+        if (!string.IsNullOrWhiteSpace(submitted.ReferredByCode))
+        {
+            var referrer = await _userService.GetByReferralCodeAsync(submitted.ReferredByCode.Trim().ToUpperInvariant());
+            if (referrer != null)
+            {
+                user.ReferredByCode = referrer.ReferralCode;
+                user.ReferredByUserId = referrer.Id;
+            }
+        }
+
         await _userService.CreateAsync(user);
 
         return Ok(new

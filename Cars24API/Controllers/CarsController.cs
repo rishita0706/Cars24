@@ -13,11 +13,15 @@ namespace Cars24API.Controllers
         private readonly CarService _carservice;
         private readonly CarSearchService _searchService;
         private readonly PricingService _pricingService;
-        public CarController(CarService carService, CarSearchService searchService, PricingService pricingService)
+        private readonly UserService _userService;
+        private readonly ReferralService _referralService;
+        public CarController(CarService carService, CarSearchService searchService, PricingService pricingService, UserService userService, ReferralService referralService)
         {
             _carservice = carService;
             _searchService = searchService;
             _pricingService = pricingService;
+            _userService = userService;
+            _referralService = referralService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
@@ -79,13 +83,37 @@ namespace Cars24API.Controllers
             return Ok(result);
         }
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Car car)
+        public async Task<IActionResult> Create([FromQuery] string? userId, [FromBody] Car car)
         {
             if (car == null)
             {
                 return BadRequest("Car data is required");
             }
+
+            // userId is optional so existing/anonymous listing flows don't
+            // break, but without it there's no seller to attribute the
+            // listing (or a referral reward) to.
+            car.OwnerId = userId;
             await _carservice.CreateAsync(car);
+
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var seller = await _userService.GetByIdAsync(userId);
+                if (seller != null)
+                {
+                    // Best-effort, same reasoning as BookingController: a
+                    // wallet hiccup should never fail the listing itself.
+                    try
+                    {
+                        await _referralService.TryGrantRewardAsync(seller);
+                    }
+                    catch
+                    {
+                        // swallowed - non-critical to the listing itself
+                    }
+                }
+            }
+
             return CreatedAtAction(nameof(GetById), new { id = car.Id }, car);
         }
 
