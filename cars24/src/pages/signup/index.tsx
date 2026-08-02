@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import { AlertCircle, Lock, Mail, Phone, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const index = () => {
@@ -14,9 +14,19 @@ const index = () => {
     confirmPassword: "",
     fullName: "",
     phone: "",
+    referredByCode: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // A shared referral link looks like /signup?ref=ABC123 - prefill (but keep
+  // editable, in case someone was told a code verbally instead).
+  useEffect(() => {
+    if (typeof navigate.query.ref === "string") {
+      setFormData((prev) => ({ ...prev, referredByCode: navigate.query.ref as string }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate.query.ref]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,6 +48,7 @@ const index = () => {
       await signUp(formData.email, formData.password, {
         fullName: formData.fullName,
         phone: formData.phone,
+        referredByCode: formData.referredByCode || undefined,
       });
       toast.success("Account created successfully!");
       navigate.push("/");
@@ -210,6 +221,31 @@ const index = () => {
                 placeholder="••••••••"
               />
             </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="referredByCode"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Referral Code <span className="text-gray-400">(optional)</span>
+            </label>
+            <div className="mt-1 relative rounded-md shadow-sm">
+              <input
+                id="referredByCode"
+                name="referredByCode"
+                type="text"
+                value={formData.referredByCode}
+                onChange={handleChange}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase"
+                placeholder="ABC123"
+              />
+            </div>
+            {formData.referredByCode && (
+              <p className="mt-1 text-xs text-green-600">
+                You&apos;ll be linked to this referral code when you sign up.
+              </p>
+            )}
           </div>
 
           <div>

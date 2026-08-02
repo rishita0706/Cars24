@@ -16,7 +16,7 @@ type AuthContextType = {
   signUp: (
     email: string,
     password: string,
-    userData: Partial<User>
+    userData: Partial<User> & { referredByCode?: string }
   ) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -51,13 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const signUp = async (
     email: string,
     password: string,
-    userData: Partial<any>
+    userData: Partial<User> & { referredByCode?: string }
   ) => {
     setLoading(true);
     try {
       const newUser = await api.signup(email, password, {
-        fullName: userData.fullName,
-        phone: userData.phone,
+        fullName: userData.fullName ?? "",
+        phone: userData.phone ?? "",
+        referredByCode: userData.referredByCode,
       });
       setUser(newUser.user);
       localStorage.setItem("user", JSON.stringify(newUser.user));

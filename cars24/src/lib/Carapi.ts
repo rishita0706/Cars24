@@ -21,8 +21,9 @@ type CarDetails = {
   highlights: string[];
 };
 
-export const createCar = async (carDetails: CarDetails) => {
-  return apiFetch(RESOURCE, {
+export const createCar = async (carDetails: CarDetails, sellerId?: string) => {
+  const query = sellerId ? `?userId=${encodeURIComponent(sellerId)}` : "";
+  return apiFetch(`${RESOURCE}${query}`, {
     method: "POST",
     body: JSON.stringify(carDetails),
   });
@@ -86,10 +87,8 @@ export type CarSuggestion = {
 
 export type CarSearchParams = {
   query?: string;
-  fuel?: string;
-  transmission?: string;
-  fuels?: string[];
-  transmissions?: string[];
+  fuel?: string | string[];
+  transmission?: string | string[];
   location?: string;
   owner?: string;
   year?: number;
@@ -112,10 +111,19 @@ export const searchCars = async (
   const query = new URLSearchParams();
 
   if (params.query) query.append("query", params.query);
-  if (params.fuel) query.append("fuel", params.fuel);
-  if (params.transmission) query.append("transmission", params.transmission);
-  params.fuels?.forEach((f) => query.append("fuels", f));
-  params.transmissions?.forEach((t) => query.append("transmissions", t));
+  // ASP.NET Core binds repeated query keys into a List<string>, so each item
+  // needs its own "fuels="/"transmissions=" entry rather than a single
+  // comma-joined value - matches SearchRequest.Fuels/Transmissions on the backend.
+  if (Array.isArray(params.fuel)) {
+    params.fuel.forEach((f) => query.append("fuels", f));
+  } else if (params.fuel) {
+    query.append("fuel", params.fuel);
+  }
+  if (Array.isArray(params.transmission)) {
+    params.transmission.forEach((t) => query.append("transmissions", t));
+  } else if (params.transmission) {
+    query.append("transmission", params.transmission);
+  }
   if (params.location) query.append("location", params.location);
   if (params.owner) query.append("owner", params.owner);
   if (params.year !== undefined) query.append("year", String(params.year));

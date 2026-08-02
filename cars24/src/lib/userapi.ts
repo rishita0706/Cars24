@@ -5,7 +5,7 @@ const RESOURCE = "/api/UserAuth";
 export const signup = async (
   email: string,
   password: string,
-  userData: { fullName: string; phone: string }
+  userData: { fullName: string; phone: string; referredByCode?: string }
 ) => {
   return apiFetch(`${RESOURCE}/signup`, {
     method: "POST",

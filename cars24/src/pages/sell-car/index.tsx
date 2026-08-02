@@ -73,7 +73,7 @@ const index = () => {
       return;
     }
     try {
-      const car = await createCar(carDetails);
+      const car = await createCar(carDetails, user.id);
       if (car?.id) {
         toast.success("Car listed Successfully");
         router.push(`/bookappointment/${car?.id}`);

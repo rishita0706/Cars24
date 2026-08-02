@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import React, { useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import NotificationSettings from "@/components/profile/NotificationSettings";
+import WalletCard from "@/components/profile/WalletCard";
 
 const index = () => {
   const { user, signOut } = useAuth();
@@ -74,6 +75,10 @@ const index = () => {
 
                   <div className="mt-8 pt-6 border-t border-gray-100">
                     <NotificationSettings userId={user.id} />
+                  </div>
+
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <WalletCard userId={user.id} />
                   </div>
                 </div>
 
