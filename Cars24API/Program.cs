@@ -36,6 +36,7 @@ builder.Services.AddSingleton<PricingService>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<WalletService>();
 builder.Services.AddSingleton<ReferralService>();
+builder.Services.AddSingleton<MaintenanceService>();
 
 builder.Services.AddCors(options =>
 {

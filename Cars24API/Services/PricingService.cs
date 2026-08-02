@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using Cars24API.Models;
+using Cars24API.Utils;
 
 namespace Cars24API.Services
 {
@@ -40,33 +40,14 @@ namespace Cars24API.Services
             "Delhi", "Gurugram", "Noida", "Mumbai", "Bengaluru"
         };
 
-        // Body type isn't a field on Car today, so it's inferred from the
-        // listing title against known nameplates. Anything unmatched defaults
-        // to "Sedan" (a neutral body type with no ground-clearance premium/penalty).
-        private static readonly string[] SuvKeywords =
-        {
-            "Creta", "Nexon", "Brezza", "Vitara", "Seltos", "Venue", "XUV", "Scorpio",
-            "Fortuner", "Duster", "Compass", "Harrier", "Safari", "EcoSport", "Kicks",
-            "Hector", "Astor", "Taigun", "Kushaq", "Punch"
-        };
-
-        private static readonly string[] MuvKeywords =
-        {
-            "Innova", "Ertiga", "Carens", "Marazzo", "Triber", "XL6"
-        };
-
-        private static readonly string[] HatchbackKeywords =
-        {
-            "Alto", "WagonR", "Wagon R", "Swift", "i10", "Santro", "Kwid", "Celerio",
-            "Tiago", "Grand i10", "Ignis", "S-Presso", "Spresso", "Baleno", "Glanza",
-            "Polo", "Punto"
-        };
+        // Body type/price parsing moved to Utils/CarInsights.cs (shared with
+        // CarSearchService, MaintenanceService).
 
         public PriceRecommendation ComputeRecommendedPrice(Car car, string? city, DateTime? asOf = null)
         {
             var date = asOf ?? DateTime.UtcNow;
-            var basePrice = ParsePrice(car.Price) ?? 0;
-            var bodyType = ClassifyBodyType(car.Title);
+            var basePrice = CarInsights.ParsePrice(car.Price) ?? 0;
+            var bodyType = CarInsights.ClassifyBodyType(car.Title);
 
             var factors = new List<PricingFactor>();
 
@@ -96,15 +77,6 @@ namespace Cars24API.Services
                 AdjustmentPercent = totalPercent,
                 Factors = factors
             };
-        }
-
-        private static string ClassifyBodyType(string title)
-        {
-            if (string.IsNullOrWhiteSpace(title)) return "Sedan";
-            if (SuvKeywords.Any(k => title.Contains(k, StringComparison.OrdinalIgnoreCase))) return "SUV";
-            if (MuvKeywords.Any(k => title.Contains(k, StringComparison.OrdinalIgnoreCase))) return "MUV";
-            if (HatchbackKeywords.Any(k => title.Contains(k, StringComparison.OrdinalIgnoreCase))) return "Hatchback";
-            return "Sedan";
         }
 
         private static PricingFactor SeasonalFactor(int month, string bodyType)
@@ -212,25 +184,6 @@ namespace Cars24API.Services
                 };
 
             return new PricingFactor { Name = "Fuel Efficiency", Percent = 0, Reason = "No significant running-cost effect." };
-        }
-
-        // Mirrors CarSearchService's ParsePriceValue - Car.Price is free text
-        // like "₹7.80 Lakh" or "₹42,00,000", not a raw number, so "lakh"/"crore"
-        // suffixes have to be resolved to an actual multiplier, not just
-        // stripped along with the other non-digit characters.
-        private static double? ParsePrice(string raw)
-        {
-            if (string.IsNullOrWhiteSpace(raw)) return null;
-
-            var lower = raw.ToLowerInvariant();
-            double multiplier = 1;
-            if (lower.Contains("crore") || Regex.IsMatch(lower, @"\bcr\b"))
-                multiplier = 10000000;
-            else if (lower.Contains("lakh") || lower.Contains("lac"))
-                multiplier = 100000;
-
-            var digits = Regex.Replace(lower, @"[^\d.]", "");
-            return double.TryParse(digits, out var value) ? value * multiplier : null;
         }
     }
 }

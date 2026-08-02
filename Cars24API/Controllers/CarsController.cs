@@ -1,4 +1,4 @@
-// Controllers/CarsController.cs
+// Controllers/CarsController.cs  
 using Microsoft.AspNetCore.Mvc;
 using Cars24API.Models;
 using Cars24API.Services;
@@ -15,13 +15,15 @@ namespace Cars24API.Controllers
         private readonly PricingService _pricingService;
         private readonly UserService _userService;
         private readonly ReferralService _referralService;
-        public CarController(CarService carService, CarSearchService searchService, PricingService pricingService, UserService userService, ReferralService referralService)
+        private readonly MaintenanceService _maintenanceService;
+        public CarController(CarService carService, CarSearchService searchService, PricingService pricingService, UserService userService, ReferralService referralService, MaintenanceService maintenanceService)
         {
             _carservice = carService;
             _searchService = searchService;
             _pricingService = pricingService;
             _userService = userService;
             _referralService = referralService;
+            _maintenanceService = maintenanceService;
         }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
@@ -61,6 +63,22 @@ namespace Cars24API.Controllers
 
             var recommendation = _pricingService.ComputeRecommendedPrice(car, city);
             return Ok(recommendation);
+        }
+
+        // GET /api/Car/{id}/maintenance-estimate
+        // Returns a MaintenanceEstimate: { riskLevel, riskLabel, estimatedAnnualCost,
+        // estimatedMonthlyCost, insights: [...], carAgeYears, kmDriven }
+        [HttpGet("{id}/maintenance-estimate")]
+        public async Task<IActionResult> GetMaintenanceEstimate(string id)
+        {
+            var car = await _carservice.GetByIdAsync(id);
+            if (car == null)
+            {
+                return NotFound();
+            }
+
+            var estimate = _maintenanceService.Estimate(car);
+            return Ok(estimate);
         }
 
         [HttpGet("summaries")]
