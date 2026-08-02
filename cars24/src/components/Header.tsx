@@ -10,6 +10,7 @@ import {
   Heart,
   User,
   ChevronDown,
+  Bell,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -31,6 +32,7 @@ const Header = () => {
     { name: "Car services", href: "/services" },
   ];
   const menuItems = [
+    { label: "Notifications", icon: Bell, link: "/profile#notifications" },
     { label: "My Appointments", icon: Calendar, link: "/appointments" },
     { label: "My Bookings", icon: Package, link: "/bookings" },
     { label: "My Orders", icon: FileText, link: "/orders" },
@@ -131,6 +133,15 @@ const Header = () => {
                       className="w-full flex items-center gap-2"
                     >
                       Profile Settings
+                    </Link>
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/profile#notifications"
+                      className="w-full flex items-center gap-2"
+                    >
+                      Notifications & Preferences
                     </Link>
                   </DropdownMenuItem>
 

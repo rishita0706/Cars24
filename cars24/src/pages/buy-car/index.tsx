@@ -101,8 +101,8 @@ const BuyCarPage = () => {
       query: debouncedQuery || undefined,
       // Geo-fencing: only listings in the detected/selected city
       location: restrictToCity && city ? city.name : undefined,
-      fuels: filters.fuel.length > 0 ? filters.fuel : undefined,
-      transmissions: filters.transmission.length > 0 ? filters.transmission : undefined,
+      fuel: filters.fuel.length > 0 ? filters.fuel : undefined,
+      transmission: filters.transmission.length > 0 ? filters.transmission : undefined,
       minYear: filters.minYear ?? undefined,
       maxYear: filters.maxYear ?? undefined,
       minMileage: filters.minMileage ?? undefined,

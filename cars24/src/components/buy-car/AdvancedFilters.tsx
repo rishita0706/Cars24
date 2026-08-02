@@ -39,9 +39,9 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
   const update = (patch: Partial<Filters>) => onChange({ ...filters, ...patch });
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow space-y-6">
+    <div className="bg-white p-4 rounded-lg shadow space-y-6 text-gray-900">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Filters</h3>
+        <h3 className="font-semibold text-gray-900">Filters</h3>
         <button
           type="button"
           className="text-xs text-blue-600 hover:underline"
@@ -53,7 +53,7 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
 
       {/* Price Range */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Price Range</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Price Range</label>
         <Slider
           max={2000000}
           step={10000}
@@ -64,7 +64,7 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
             }
           }}
         />
-        <div className="flex justify-between mt-2 text-sm text-gray-600">
+        <div className="flex justify-between mt-2 text-sm text-gray-700 font-medium">
           <span>₹{filters.priceRange[0].toLocaleString("en-IN")}</span>
           <span>₹{filters.priceRange[1].toLocaleString("en-IN")}</span>
         </div>
@@ -72,17 +72,17 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
 
       {/* Fuel Type */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Fuel Type</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Fuel Type</label>
         <div className="space-y-2">
           {FUEL_OPTIONS.map((fuel) => (
-            <label key={fuel} className="flex items-center">
+            <label key={fuel} className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 checked={filters.fuel.includes(fuel)}
                 onChange={() => update({ fuel: toggle(filters.fuel, fuel) })}
               />
-              <span className="ml-2 text-sm">{fuel}</span>
+              <span className="ml-2 text-sm text-gray-800 font-medium">{fuel}</span>
             </label>
           ))}
         </div>
@@ -90,17 +90,17 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
 
       {/* Transmission */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Transmission</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Transmission</label>
         <div className="space-y-2">
           {TRANSMISSION_OPTIONS.map((t) => (
-            <label key={t} className="flex items-center">
+            <label key={t} className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 checked={filters.transmission.includes(t)}
                 onChange={() => update({ transmission: toggle(filters.transmission, t) })}
               />
-              <span className="ml-2 text-sm">{t}</span>
+              <span className="ml-2 text-sm text-gray-800 font-medium">{t}</span>
             </label>
           ))}
         </div>
@@ -108,7 +108,7 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
 
       {/* Year of manufacture */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Year</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Year</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -119,9 +119,9 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
             onChange={(e) =>
               update({ minYear: e.target.value ? Number(e.target.value) : null })
             }
-            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 bg-white placeholder-gray-400"
           />
-          <span className="text-gray-400 text-sm">to</span>
+          <span className="text-gray-500 text-sm">to</span>
           <input
             type="number"
             placeholder="Max"
@@ -131,14 +131,14 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
             onChange={(e) =>
               update({ maxYear: e.target.value ? Number(e.target.value) : null })
             }
-            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 bg-white placeholder-gray-400"
           />
         </div>
       </div>
 
       {/* Mileage (km driven) */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Kilometers Driven</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Kilometers Driven</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -148,9 +148,9 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
             onChange={(e) =>
               update({ minMileage: e.target.value ? Number(e.target.value) : null })
             }
-            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 bg-white placeholder-gray-400"
           />
-          <span className="text-gray-400 text-sm">to</span>
+          <span className="text-gray-500 text-sm">to</span>
           <input
             type="number"
             placeholder="Max"
@@ -159,26 +159,26 @@ export default function AdvancedFilters({ filters, onChange }: Props) {
             onChange={(e) =>
               update({ maxMileage: e.target.value ? Number(e.target.value) : null })
             }
-            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
+            className="w-full border border-gray-300 rounded-md px-2 py-1 text-sm text-gray-900 bg-white placeholder-gray-400"
           />
         </div>
       </div>
 
       {/* Sort */}
       <div>
-        <label className="text-sm font-medium mb-2 block">Sort By</label>
+        <label className="text-sm font-medium mb-2 block text-gray-900">Sort By</label>
         <select
           value={filters.sortBy}
           onChange={(e) => update({ sortBy: e.target.value })}
-          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm"
+          className="w-full border border-gray-300 rounded-md px-2 py-1.5 text-sm text-gray-900 bg-white"
         >
-          <option value="relevance">Relevance</option>
-          <option value="price_asc">Price: Low to High</option>
-          <option value="price_desc">Price: High to Low</option>
-          <option value="year_desc">Year: Newest First</option>
-          <option value="year_asc">Year: Oldest First</option>
-          <option value="km_asc">Kilometers: Lowest First</option>
-          <option value="recent">Recently Listed</option>
+          <option value="relevance" className="text-gray-900">Relevance</option>
+          <option value="price_asc" className="text-gray-900">Price: Low to High</option>
+          <option value="price_desc" className="text-gray-900">Price: High to Low</option>
+          <option value="year_desc" className="text-gray-900">Year: Newest First</option>
+          <option value="year_asc" className="text-gray-900">Year: Oldest First</option>
+          <option value="km_asc" className="text-gray-900">Kilometers: Lowest First</option>
+          <option value="recent" className="text-gray-900">Recently Listed</option>
         </select>
       </div>
     </div>
