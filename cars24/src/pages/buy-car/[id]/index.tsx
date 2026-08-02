@@ -5,6 +5,8 @@ import { createBooking } from "@/lib/Bookingapi";
 import { getcarByid } from "@/lib/Carapi";
 import { getRecommendedPrice, type PriceRecommendation } from "@/lib/Pricingapi";
 import RecommendedPrice from "@/components/buy-car/RecommendedPrice";
+import { getMaintenanceEstimate, type MaintenanceEstimate } from "@/lib/Maintenanceapi";
+import MaintenanceEstimateCard from "@/components/buy-car/MaintenanceEstimateCard";
 import {
   AlertCircle,
   Calendar,
@@ -69,6 +71,7 @@ const index = () => {
   const [carDetails, setcarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [priceRecommendation, setPriceRecommendation] = useState<PriceRecommendation | null>(null);
+  const [maintenanceEstimate, setMaintenanceEstimate] = useState<MaintenanceEstimate | null>(null);
   const [step, setstep] = useState(1);
   useEffect(() => {
     if (!id) return;
@@ -93,6 +96,13 @@ const index = () => {
       .then(setPriceRecommendation)
       .catch(() => setPriceRecommendation(null));
   }, [id, city?.name]);
+
+  useEffect(() => {
+    if (!id) return;
+    getMaintenanceEstimate(id as string)
+      .then(setMaintenanceEstimate)
+      .catch(() => setMaintenanceEstimate(null));
+  }, [id]);
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -204,6 +214,10 @@ const index = () => {
 
               {priceRecommendation && (
                 <RecommendedPrice recommendation={priceRecommendation} />
+              )}
+
+              {maintenanceEstimate && (
+                <MaintenanceEstimateCard estimate={maintenanceEstimate} />
               )}
 
               {/* Specs Grid */}
