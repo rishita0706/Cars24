@@ -68,6 +68,7 @@ const index = () => {
   const router = useRouter();
   const { id } = router.query;
   const { city } = useLocation();
+  const { user } = useAuth();
   const [carDetails, setcarDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [priceRecommendation, setPriceRecommendation] = useState<PriceRecommendation | null>(null);
@@ -126,11 +127,10 @@ const index = () => {
       [name]: value,
     }));
   };
-  const { user } = useAuth();
   const handlesubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Pleasde login to continue");
+      toast.error("Please login to continue");
       return;
     }
     try {

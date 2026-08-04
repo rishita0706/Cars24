@@ -156,8 +156,8 @@ const PurchasedCarsPage = () => {
         </h1>
         <p className="text-gray-600">Thank you for your purchase!</p>
       </div>
-      {purchasedCars.map((data: any) => (
-        <div className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl">
+      {purchasedCars.map((data: any, idx: number) => (
+        <div key={data.booking?.id || data.car?.id || idx} className="max-w-5xl mx-auto bg-gray-50 rounded-lg overflow-hidden shadow-xl mb-8">
           <div className="bg-blue-900 text-white p-6 rounded-t-lg">
             <div className="flex justify-between items-start">
               <div>

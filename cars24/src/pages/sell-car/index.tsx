@@ -69,7 +69,7 @@ const index = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      toast.error("Pleasde login to continue");
+      toast.error("Please login to continue");
       return;
     }
     try {

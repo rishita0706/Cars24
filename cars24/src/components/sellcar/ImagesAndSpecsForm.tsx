@@ -63,16 +63,46 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
     setIsValid(!!specsFilled && hasImages);
   }, [carDetails]);
 
-  // In a real implementation, this would handle file uploads
-  const handleImageUpload = () => {
-    // Simulating image upload by using placeholder images
-    if (carDetails.images.length < 10) {
-      const randomImage =
-        placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
-      updateCarDetails({
-        images: [...carDetails.images, randomImage],
-      });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const processFiles = (files: FileList | File[]) => {
+    const validFiles = Array.from(files).filter((file) =>
+      file.type.startsWith("image/")
+    );
+    if (validFiles.length === 0) return;
+
+    const newImages: string[] = [];
+    let readCount = 0;
+    const remainingSlots = 10 - carDetails.images.length;
+    const filesToRead = validFiles.slice(0, remainingSlots);
+
+    filesToRead.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (result) {
+          newImages.push(result);
+        }
+        readCount++;
+        if (readCount === filesToRead.length) {
+          updateCarDetails({
+            images: [...carDetails.images, ...newImages],
+          });
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+      if (e.target) e.target.value = "";
     }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const removeImage = (index: number) => {
@@ -116,6 +146,16 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
       setDragActive(false);
     }
   };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  };
+
   return (
     <div className="space-y-8 py-4">
       <div>
@@ -129,29 +169,39 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
           Car Photos
         </label>
 
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept="image/*"
+          multiple
+          className="hidden"
+        />
+
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center ${
-            dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
+          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+            dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400 bg-gray-50/50"
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
-          onDrop={(e) => {
-            handleDrag(e);
-            handleImageUpload();
-          }}
+          onDrop={handleDrop}
+          onClick={triggerFileInput}
         >
           <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-600">Drag photos here or</p>
+          <p className="text-gray-700 font-medium">Drag & drop car photos here or click to browse</p>
           <button
             type="button"
-            onClick={handleImageUpload}
-            className="mt-2 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              triggerFileInput();
+            }}
+            className="mt-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
-            Browse Files
+            Browse Device Photos
           </button>
           <p className="text-xs text-gray-500 mt-2">
-            Add up to 10 photos (JPEG or PNG)
+            Upload up to 10 high-quality photos from your phone or computer (JPEG, PNG, WEBP)
           </p>
         </div>
         {carDetails.images.length > 0 && (
@@ -185,7 +235,7 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
             {carDetails.images.length < 10 && (
               <button
                 type="button"
-                onClick={handleImageUpload}
+                onClick={triggerFileInput}
                 className="aspect-video flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <Plus className="h-6 w-6 text-gray-400" />
