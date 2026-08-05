@@ -89,7 +89,7 @@ const NewCarsPage = () => {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 self-start"
             >
               <UploadCloud className="h-4 w-4" />
-              {showUploadPanel ? "Hide admin panel" : "Admin: Upload Dataset"}
+              {showUploadPanel ? "Hide panel" : "Upload Dataset"}
             </button>
           </div>
 
@@ -176,7 +176,7 @@ const NewCarsPage = () => {
             <div className="text-center py-16 bg-white rounded-xl border border-gray-100">
               <p className="text-gray-600">
                 No cars match your filters yet. {result?.totalResults === 0 && result.availableBrands.length === 0
-                  ? "An admin can upload a dataset using the panel above to get started."
+                  ? "You  can upload a dataset using the panel above to get started."
                   : "Try adjusting your search."}
               </p>
             </div>
@@ -265,16 +265,6 @@ const NewCarCard: React.FC<{ car: NewCar }> = ({ car }) => (
   </div>
 );
 
-// -----------------------------------------------------------------------
-// Admin dataset upload panel (item 7 of the spec).
-//
-// NOTE: there's no role/permission system in this project yet (User has no
-// isAdmin flag, and the backend endpoints don't check for one either) - so
-// this panel is reachable by anyone who's logged in, gated only by the
-// "Admin: Upload Dataset" toggle above. Before shipping this for real,
-// add an actual admin check on both the button visibility and the
-// NewCarsController endpoints server-side.
-// -----------------------------------------------------------------------
 const DatasetUploadPanel: React.FC<{ onImported: () => void }> = ({ onImported }) => {
   const [file, setFile] = useState<File | null>(null);
   const [previewResult, setPreviewResult] = useState<NewCarImportResult | null>(null);
