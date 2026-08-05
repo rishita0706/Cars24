@@ -3,6 +3,7 @@ import { Calendar, Clock, MapPin, Car, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { getappointmentbyuser, cancelAppointment } from "@/lib/Appointmentapi";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 
 const AppointmentsPage = () => {
   // Mock appointments data matching MongoDB schema
@@ -63,7 +64,7 @@ const AppointmentsPage = () => {
         setAppointments(car);
       }
     } catch (error) {
-      console.error(error);
+      notifyError(error, { fallback: "Couldn't load your appointments. Please try again.", context: "Load appointments failed:" });
     } finally {
       setLoading(false);
     }
@@ -84,8 +85,7 @@ const AppointmentsPage = () => {
         toast.error("Failed to cancel appointment");
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to cancel appointment");
+      notifyError(error, { fallback: "Failed to cancel appointment.", context: "Cancel appointment failed:" });
     }
   };
   if (loading) {

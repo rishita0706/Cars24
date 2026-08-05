@@ -2,14 +2,12 @@ import {
   Calendar,
   Fuel,
   Gauge,
-  Plus,
   Settings,
   Shield,
-  Upload,
   User,
-  X,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import ImageUploader from "./ImageUploader";
 type CarDetails = {
   id: string;
   title: string;
@@ -42,12 +40,6 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
   prevStep,
 }) => {
   const [isValid, setIsValid] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-
-  const placeholderImages = [
-    "https://images.pexels.com/photos/112460/pexels-photo-112460.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-    "https://images.pexels.com/photos/116675/pexels-photo-116675.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
-  ];
 
   useEffect(() => {
     const { specs } = carDetails;
@@ -62,54 +54,6 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
 
     setIsValid(!!specsFilled && hasImages);
   }, [carDetails]);
-
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const processFiles = (files: FileList | File[]) => {
-    const validFiles = Array.from(files).filter((file) =>
-      file.type.startsWith("image/")
-    );
-    if (validFiles.length === 0) return;
-
-    const newImages: string[] = [];
-    let readCount = 0;
-    const remainingSlots = 10 - carDetails.images.length;
-    const filesToRead = validFiles.slice(0, remainingSlots);
-
-    filesToRead.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (result) {
-          newImages.push(result);
-        }
-        readCount++;
-        if (readCount === filesToRead.length) {
-          updateCarDetails({
-            images: [...carDetails.images, ...newImages],
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      processFiles(e.target.files);
-      if (e.target) e.target.value = "";
-    }
-  };
-
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
-  };
-
-  const removeImage = (index: number) => {
-    const updatedImages = [...carDetails.images];
-    updatedImages.splice(index, 1);
-    updateCarDetails({ images: updatedImages });
-  };
 
   const handleSpecChange = (
     key: keyof CarDetails["specs"],
@@ -137,25 +81,6 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
   ];
   const insuranceOptions = ["Comprehensive", "Third Party", "Expired"];
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFiles(e.dataTransfer.files);
-    }
-  };
-
   return (
     <div className="space-y-8 py-4">
       <div>
@@ -169,80 +94,10 @@ const ImagesAndSpecsForm: React.FC<ImagesAndSpecsFormProps> = ({
           Car Photos
         </label>
 
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          multiple
-          className="hidden"
+        <ImageUploader
+          images={carDetails.images}
+          onChange={(images) => updateCarDetails({ images })}
         />
-
-        <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-            dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-400 bg-gray-50/50"
-          }`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={triggerFileInput}
-        >
-          <Upload className="h-10 w-10 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-700 font-medium">Drag & drop car photos here or click to browse</p>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              triggerFileInput();
-            }}
-            className="mt-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Browse Device Photos
-          </button>
-          <p className="text-xs text-gray-500 mt-2">
-            Upload up to 10 high-quality photos from your phone or computer (JPEG, PNG, WEBP)
-          </p>
-        </div>
-        {carDetails.images.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
-            {carDetails.images.map((image, index) => (
-              <div
-                key={index}
-                className="relative group aspect-video rounded-lg overflow-hidden"
-              >
-                <img
-                  src={image}
-                  alt={`Car preview ${index + 1}`}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="p-1.5 bg-red-600 text-white rounded-full"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                {index === 0 && (
-                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                    Cover Photo
-                  </div>
-                )}
-              </div>
-            ))}
-            {carDetails.images.length < 10 && (
-              <button
-                type="button"
-                onClick={triggerFileInput}
-                className="aspect-video flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Plus className="h-6 w-6 text-gray-400" />
-              </button>
-            )}
-          </div>
-        )}
       </div>
       <div className="space-y-4">
         <h3 className="text-lg font-medium text-gray-900">

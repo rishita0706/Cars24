@@ -42,7 +42,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(userData.user);
       localStorage.setItem("user", JSON.stringify(userData.user));
     } catch (error) {
-      console.error("Login failed:", error);
       throw error;
     } finally {
       setLoading(false);
@@ -63,7 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(newUser.user);
       localStorage.setItem("user", JSON.stringify(newUser.user));
     } catch (error) {
-      console.error("Login failed:", error);
       throw error;
     } finally {
       setLoading(false);

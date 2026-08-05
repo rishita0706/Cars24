@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 
 const LoginPage = () => {
   const navigate = useRouter();
@@ -23,9 +24,11 @@ const LoginPage = () => {
       toast.success("Signed in successfully!");
       navigate.push("/");
     } catch (err) {
-      console.error("Login error:", err);
-      toast.error("Failed to sign in. Please check your credentials.");
-      setError("Failed to sign in. Please check your credentials.");
+      const message = notifyError(err, {
+        fallback: "Failed to sign in. Please check your credentials.",
+        context: "Login error:",
+      });
+      setError(message);
     } finally {
       setLoading(false);
     }

@@ -24,6 +24,24 @@ export const getUserById = async (userId: string) => {
   return apiFetch(`${RESOURCE}/${userId}`);
 };
 
+export const forgotPassword = async (email: string) => {
+  return apiFetch<{ message: string; devResetToken?: string }>(
+    `${RESOURCE}/forgot-password`,
+    { method: "POST", body: JSON.stringify({ email }) }
+  );
+};
+
+export const resetPassword = async (
+  email: string,
+  token: string,
+  newPassword: string
+) => {
+  return apiFetch<{ message: string }>(`${RESOURCE}/reset-password`, {
+    method: "POST",
+    body: JSON.stringify({ email, token, newPassword }),
+  });
+};
+
 export type NotificationPreferences = {
   appointmentAndBookingUpdates: boolean;
   bidUpdates: boolean;

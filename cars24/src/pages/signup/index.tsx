@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 
 const index = () => {
   const navigate = useRouter();
@@ -53,9 +54,11 @@ const index = () => {
       toast.success("Account created successfully!");
       navigate.push("/");
     } catch (err) {
-      console.error("Signup error:", err);
-      toast.error("Failed to create an account. Please try again.");
-      setError("Failed to create an account. Please try again.");
+      const message = notifyError(err, {
+        fallback: "Failed to create an account. Please try again.",
+        context: "Signup error:",
+      });
+      setError(message);
     } finally {
       setLoading(false);
     }

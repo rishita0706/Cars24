@@ -19,6 +19,7 @@ import {
 import { useRouter } from "next/router";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 const carDetails = {
   id: "fronx-2023",
   title: "2023 Maruti FRONX DELTA PLUS 1.2L AGS",
@@ -81,7 +82,7 @@ const index = () => {
         const data = await getcarByid(id as string);
         setcarDetails(data);
       } catch (error) {
-        console.error(error);
+        notifyError(error, { fallback: "Couldn't load this car's details. Please try again.", context: "Load car details failed:" });
       } finally {
         setLoading(false);
       }
@@ -154,8 +155,7 @@ const index = () => {
         toast.error("Failed to complete purchase");
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error?.message || "Failed to complete purchase");
+      notifyError(error, { fallback: "Failed to complete purchase.", context: "Complete purchase failed:" });
     }
   };
 
@@ -250,7 +250,7 @@ const index = () => {
                 </h3>
                 <ul className="space-y-1">
                   {carDetails.highlights.map((highlight: any, index: any) => (
-                    <li key={index} className="text-blue-700 flex items-center">
+                    <li key={`${highlight}-${index}`} className="text-blue-700 flex items-center">
                       <div className="w-2 h-2 bg-blue-700 rounded-full mr-2"></div>
                       {highlight}
                     </li>
@@ -262,7 +262,7 @@ const index = () => {
                 <h3 className="font-semibold text-gray-800 mb-2">Features</h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
                   {carDetails.features.map((feature: any, index: any) => (
-                    <li key={index}>{feature}</li>
+                    <li key={`${feature}-${index}`}>{feature}</li>
                   ))}
                 </ul>
               </div>

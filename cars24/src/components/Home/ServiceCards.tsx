@@ -64,7 +64,7 @@ export default function ServiceCards() {
             <div className="p-6 bg-white">
               <ul className="mb-4">
                 {service.features.map((feature, index) => (
-                  <li key={index} className="flex items-center mb-2 text-sm text-black">
+                  <li key={`${service.title}-${feature}`} className="flex items-center mb-2 text-sm text-black">
                     <span className="flex-shrink-0 h-1.5 w-1.5 rounded-full bg-green-500 mr-2"></span>
                     {feature}
                   </li>

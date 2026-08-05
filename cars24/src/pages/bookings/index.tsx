@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { getBookingbyuser } from "@/lib/Bookingapi";
+import { notifyError } from "@/lib/notify";
 
 const PurchasedCarsPage = () => {
   // Mock purchased cars data matching MongoDB schema
@@ -123,7 +124,7 @@ const PurchasedCarsPage = () => {
           setpurchasedCars(car);
         }
       } catch (error) {
-        console.error(error);
+        notifyError(error, { fallback: "Couldn't load your bookings. Please try again.", context: "Load bookings failed:" });
       } finally {
         setLoading(false);
       }

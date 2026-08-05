@@ -124,7 +124,7 @@ const Footer = () => {
               const Icon = link.icon;
               return (
                 <Link
-                  key={index}
+                  key={link.href}
                   href={link.href}
                   className="text-gray-400 hover:text-gray-500"
                 >

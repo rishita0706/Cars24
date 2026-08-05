@@ -111,9 +111,9 @@ export default function CustomerReviews() {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            {reviews.map((_, index) => (
+            {reviews.map((review, index) => (
               <div 
-                key={index}
+                key={review.id}
                 className={`h-2 w-2 rounded-full ${
                   index === currentIndex ? "bg-blue-600" : "bg-gray-300"
                 }`}

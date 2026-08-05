@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 import { createAppointment } from "@/lib/Appointmentapi";
 
 const BookAppointmentPage = () => {
@@ -77,8 +78,7 @@ const BookAppointmentPage = () => {
         toast.error("Failed to book appointment");
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error(error?.message || "Failed to book appointment");
+      notifyError(error, { fallback: "Failed to book appointment.", context: "Book appointment failed:" });
     } finally {
       setSubmitting(false);
     }

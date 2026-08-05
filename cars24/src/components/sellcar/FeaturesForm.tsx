@@ -176,7 +176,7 @@ const FeaturesForm: React.FC<FeaturesFormProps> = ({
               <div className="flex flex-wrap gap-2">
                 {carDetails.features.map((feature, index) => (
                   <div
-                    key={index}
+                    key={`${feature}-${index}`}
                     className="flex items-center bg-white px-3 py-1.5 rounded-full border border-gray-200"
                   >
                     <span className="text-sm text-gray-800">{feature}</span>
@@ -263,7 +263,7 @@ const FeaturesForm: React.FC<FeaturesFormProps> = ({
               <div className="flex flex-wrap gap-2">
                 {carDetails.highlights.map((highlight, index) => (
                   <div
-                    key={index}
+                    key={`${highlight}-${index}`}
                     className="flex items-center bg-white px-3 py-1.5 rounded-full border border-gray-200"
                   >
                     <span className="text-sm text-gray-800">{highlight}</span>

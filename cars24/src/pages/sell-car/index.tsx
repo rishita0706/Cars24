@@ -5,6 +5,7 @@ import Carform from "@/components/sellcar/Carform";
 import { useRouter } from "next/router";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { notifyError } from "@/lib/notify";
 import { createCar } from "@/lib/Carapi";
 type CarDetails = {
   id: string;
@@ -79,8 +80,7 @@ const index = () => {
         router.push(`/bookappointment/${car?.id}`);
       }
     } catch (error) {
-      console.error(error);
-      toast.error("Failed to list car");
+      notifyError(error, { fallback: "Failed to list car. Please try again.", context: "Create car listing failed:" });
     }
   };
   return (
