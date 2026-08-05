@@ -3,32 +3,6 @@ using Cars24API.Utils;
 
 namespace Cars24API.Services
 {
-    // Dynamic pricing / "Recommended Price" engine.
-    //
-    // The adjustment rules below are grounded in documented Indian used-car
-    // market behavior rather than the literal illustrative examples in the
-    // original feature request. Two of those examples were checked against
-    // real market reporting and found to point the wrong way:
-    //
-    //   - "increase SUV prices during monsoon" - actual reporting (VahanBazaar,
-    //     CarArth, 2026) shows the May-Jun PRE-monsoon window is the real demand
-    //     spike, and it's broad across body types, not SUV-specific. July-Sep
-    //     itself is a buyer's market with softer prices overall (flood-damage
-    //     caution suppresses footfall) - SUVs/MUVs simply hold value better
-    //     than hatchbacks/sedans in that window (genuine ground-clearance
-    //     advantage on waterlogged roads), rather than gaining outright.
-    //   - "reduce hatchback value during fuel price spikes" - actual reporting
-    //     (CarDekho, industry coverage of 2026 fuel hikes) shows the opposite:
-    //     fuel-efficient hatchbacks and CNG cars see INCREASED demand when
-    //     fuel prices rise, because running cost becomes the buying priority.
-    //
-    // This engine implements the directionally-correct version of both. All
-    // individual adjustments are deliberately modest (low single-digit %) and
-    // the combined total is capped - this drives a "Recommended Price"
-    // advisory shown to users, not an authoritative repricing of the actual
-    // listing. The city list, keyword lists, and percentages are illustrative
-    // starting points, not a precision demand index - they live in one place
-    // here so they're easy to tune as real sales data comes in.
     public class PricingService
     {
         private const double MinTotalAdjustment = -10.0;
@@ -39,9 +13,6 @@ namespace Cars24API.Services
         {
             "Delhi", "Gurugram", "Noida", "Mumbai", "Bengaluru"
         };
-
-        // Body type/price parsing moved to Utils/CarInsights.cs (shared with
-        // CarSearchService, MaintenanceService).
 
         public PriceRecommendation ComputeRecommendedPrice(Car car, string? city, DateTime? asOf = null)
         {
@@ -63,9 +34,6 @@ namespace Cars24API.Services
             var totalPercent = Math.Clamp(
                 factors.Sum(f => f.Percent), MinTotalAdjustment, MaxTotalAdjustment);
 
-            // Round to the nearest 100 - a "Recommended Price" with paisa-level
-            // precision would look like false accuracy given these are demand
-            // heuristics, not an appraisal.
             var recommendedPrice = basePrice > 0
                 ? Math.Round(basePrice * (1 + totalPercent / 100.0) / 100.0) * 100.0
                 : 0;
@@ -81,8 +49,6 @@ namespace Cars24API.Services
 
         private static PricingFactor SeasonalFactor(int month, string bodyType)
         {
-            // Pre-monsoon rush (May-Jun): broad demand spike - buyers want a
-            // reliable car before monsoon commutes get difficult.
             if (month == 5 || month == 6)
                 return new PricingFactor
                 {
@@ -91,9 +57,6 @@ namespace Cars24API.Services
                     Reason = "Broad seasonal demand uplift ahead of monsoon (May-Jun)."
                 };
 
-            // Monsoon (Jul-Sep): buyer's market overall, but SUVs/MUVs hold
-            // value better than hatchbacks/sedans due to genuine ground-clearance
-            // advantage on waterlogged roads.
             if (month >= 7 && month <= 9)
             {
                 return bodyType is "SUV" or "MUV"

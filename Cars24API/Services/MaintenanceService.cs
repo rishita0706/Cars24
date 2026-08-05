@@ -3,21 +3,6 @@ using Cars24API.Utils;
 
 namespace Cars24API.Services
 {
-    // Maintenance cost estimator.
-    //
-    // Base annual costs by body type and the age/mileage multiplier bands
-    // below are grounded in 2026 Indian used-car service-cost reporting
-    // (Ride N Repair, AutoDecode, CalcWise - annual maintenance ranging from
-    // ~Rs 4,000-12,000 for a hatchback in its first 3 years up to
-    // Rs 20,000-35,000 for an aging SUV/premium vehicle, with a firm
-    // 10,000 km / 12-month service interval in Indian driving conditions).
-    // See the comments on each table below for the specific reasoning.
-    //
-    // This produces a budgeting estimate for a buyer browsing a listing, not
-    // a mechanic's inspection report - actual cost depends on the individual
-    // car's service history and condition, neither of which Cars24 tracks
-    // today. Numbers are rounded (nearest Rs 500 annually, Rs 50 monthly) to
-    // avoid implying false precision.
     public class MaintenanceService
     {
         // Rs/year baseline at 0-3 years old, under 40,000 km.
@@ -29,9 +14,6 @@ namespace Cars24API.Services
             ["SUV"] = 20000,
         };
 
-        // Reported costs roughly double moving from the "years 1-3" band into
-        // "years 4-6" as wear items (brakes, suspension bushings, etc.) start
-        // appearing, then keep climbing for older cars.
         private static double AgeMultiplier(int ageYears) => ageYears switch
         {
             <= 3 => 1.0,
@@ -40,8 +22,6 @@ namespace Cars24API.Services
             _ => 2.8,
         };
 
-        // Independent of age - a heavily-driven younger car still wears
-        // faster than its age alone would suggest.
         private static double MileageMultiplier(double km) => km switch
         {
             < 40000 => 1.0,
@@ -75,8 +55,6 @@ namespace Cars24API.Services
             };
         }
 
-        // Matches the original feature spec's own example almost exactly:
-        // "a 6-year-old car with over 80,000 km driven" -> High.
         private static (string Level, string Label) ClassifyRisk(int ageYears, double km)
         {
             if (ageYears >= 6 && km >= 80000)
@@ -90,21 +68,14 @@ namespace Cars24API.Services
         {
             var insights = new List<string>();
 
-            // Standard service interval: every 10,000 km (see class notes).
             var kmSinceService = km % 10000;
             var kmToNextService = kmSinceService == 0 ? 10000 : 10000 - kmSinceService;
             insights.Add($"Next scheduled service due in {kmToNextService:N0} km.");
 
-            // Brake pads: common rule-of-thumb replacement cycle ~35,000 km.
-            // Flagged in the last 20% of that cycle (i.e. "coming up soon"),
-            // not the whole back half - a flag that's true 50% of the time
-            // isn't actionable information.
             var kmIntoBrakeCycle = km % 35000;
             if (kmIntoBrakeCycle >= 28000)
                 insights.Add("Brake pads likely to need replacement soon.");
 
-            // Tyres: ~40,000 km cycle, consistent with the reported
-            // 35,000-50,000 km tyre-life range across body types.
             var kmIntoTyreCycle = km % 40000;
             if (kmIntoTyreCycle >= 32000)
                 insights.Add("Tire replacement expected in the near future.");

@@ -26,14 +26,7 @@ public class Car
     public List<string> Features { get; set; } = new List<string>();
     public List<string> Highlights { get; set; } = new List<string>();
 
-    // Popularity signal for search ranking. Incremented each time a car's
-    // detail page is fetched (see CarController.GetById). Never set by the
-    // client - Create() always starts a new listing at 0.
     public int ViewCount { get; set; } = 0;
 
-    // The user who listed this car for sale. Nullable because pre-existing
-    // listings created before this field existed won't have one - never
-    // trust this from client input, CarsController.Create sets it from the
-    // authenticated seller's own userId, not from the request body.
     public string? OwnerId { get; set; }
 }

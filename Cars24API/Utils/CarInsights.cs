@@ -2,15 +2,6 @@ using System.Text.RegularExpressions;
 
 namespace Cars24API.Utils
 {
-    // Shared helpers for parsing Car's free-text numeric fields (Price, Km)
-    // and inferring body type from the listing title.
-    //
-    // Previously CarSearchService and PricingService each carried their own
-    // near-identical copy of this logic. Consolidated here when
-    // MaintenanceService was about to become a third copy - Car has no
-    // structured BodyType/numeric Price/Km fields today, so every feature
-    // that needs them has to derive them the same way; better to derive them
-    // in exactly one place.
     public static class CarInsights
     {
         private static readonly string[] SuvKeywords =
@@ -32,10 +23,6 @@ namespace Cars24API.Utils
             "Polo", "Punto"
         };
 
-        // Body type isn't a field on Car, so it's inferred from the listing
-        // title against known nameplates. Unmatched titles default to
-        // "Sedan" - a neutral body type with no ground-clearance premium/
-        // penalty in pricing, and a mid-range maintenance baseline.
         public static string ClassifyBodyType(string? title)
         {
             if (string.IsNullOrWhiteSpace(title)) return "Sedan";
@@ -45,9 +32,6 @@ namespace Cars24API.Utils
             return "Sedan";
         }
 
-        // Strips everything except digits and '.' so "45,000", "45,000 km",
-        // "45000" all parse the same way. Returns null when nothing numeric
-        // is present.
         public static double? ParseNumeric(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw)) return null;
@@ -55,9 +39,6 @@ namespace Cars24API.Utils
             return double.TryParse(digits, out var value) ? value : null;
         }
 
-        // Car.Price is free text like "₹7.80 Lakh" or "₹42,00,000", not a raw
-        // number - "lakh"/"crore" suffixes have to resolve to an actual
-        // multiplier, not just get stripped along with the other characters.
         public static double? ParsePrice(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw)) return null;

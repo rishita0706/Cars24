@@ -36,9 +36,8 @@ namespace Cars24API.Controllers
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound("User not found");
-            user.BookingId ??= new List<string>(); // legacy user docs may still have this stored as null
+            user.BookingId ??= new List<string>();
 
-            // Loan status is derived server-side from whether the customer requested a loan
             booking.LoanStatus = string.Equals(booking.LoanRequired, "yes", StringComparison.OrdinalIgnoreCase)
                 ? "In Process"
                 : "Not Required";
@@ -48,8 +47,6 @@ namespace Cars24API.Controllers
             user.BookingId.Add(booking.Id!);
             await _userService.UpdateAsync(user.Id, user);
 
-            // Push notification is best-effort - NotificationService swallows
-            // its own errors, so this never blocks/fails the booking itself.
             var car = await _carService.GetByIdAsync(booking.CarId);
             await _notificationService.SendToUserAsync(
                 user,
@@ -57,13 +54,6 @@ namespace Cars24API.Controllers
                 $"Your booking for {car?.Title ?? "your car"} has been confirmed.",
                 NotificationService.NotificationCategory.AppointmentAndBookingUpdates);
 
-            // Referral reward must run AFTER the notification call above, not
-            // before: TryGrantRewardAsync updates WalletBalance via a targeted
-            // atomic field update, but SendToUserAsync may itself do a full
-            // User replace (stale-token cleanup) using this same in-memory
-            // `user` snapshot - running it first would silently overwrite the
-            // reward. This is best-effort like the notification: a wallet
-            // hiccup should never fail the booking that earned it.
             try
             {
                 await _referralService.TryGrantRewardAsync(user);
@@ -89,7 +79,7 @@ namespace Cars24API.Controllers
             var user = await _userService.GetByIdAsync(userId);
             if (user == null)
                 return NotFound();
-            user.BookingId ??= new List<string>(); // legacy user docs may still have this stored as null
+            user.BookingId ??= new List<string>(); 
             var results = new List<bookingDto>();
             foreach (var bookingid in user.BookingId)
             {
@@ -116,7 +106,7 @@ namespace Cars24API.Controllers
             if (existing == null)
                 return NotFound("Booking not found");
 
-            booking.Id = id; // keep the original id, ignore any id sent in the body
+            booking.Id = id; 
             var updated = await _bookingService.UpdateAsync(id, booking);
             if (!updated)
                 return NotFound("Booking not found");
@@ -132,7 +122,6 @@ namespace Cars24API.Controllers
 
             await _bookingService.DeleteAsync(id);
 
-            // Also detach the booking reference from the owning user, if provided
             if (!string.IsNullOrEmpty(userId))
             {
                 var user = await _userService.GetByIdAsync(userId);

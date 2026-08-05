@@ -14,9 +14,6 @@ namespace Cars24API.Models
         // "Earned" | "Redeemed"
         public string Type { get; set; } = string.Empty;
 
-        // Positive for Earned, negative for Redeemed - a running balance is
-        // just the sum of this field if it's ever needed independent of
-        // User.WalletBalance.
         public int Points { get; set; }
 
         public string Reason { get; set; } = string.Empty;

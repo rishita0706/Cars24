@@ -15,11 +15,11 @@ public class NewCar
 
     public decimal Price { get; set; }
 
-    public string Mileage { get; set; } = string.Empty; // e.g. "18.5 kmpl"
+    public string Mileage { get; set; } = string.Empty; 
     public string Transmission { get; set; } = string.Empty;
     public string Fuel { get; set; } = string.Empty;
-    public string Engine { get; set; } = string.Empty; // e.g. "1197 cc"
-    public string Power { get; set; } = string.Empty;  // e.g. "88 bhp"
+    public string Engine { get; set; } = string.Empty; 
+    public string Power { get; set; } = string.Empty; 
 
     public List<string> Images { get; set; } = new();
     public List<string> Features { get; set; } = new();

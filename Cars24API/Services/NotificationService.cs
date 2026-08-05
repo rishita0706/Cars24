@@ -66,9 +66,6 @@ namespace Cars24API.Services
 
         public bool IsConfigured => _isConfigured;
 
-        // Best-effort: never throws. A push-delivery failure should never
-        // break the booking/appointment/etc. flow that triggered it - callers
-        // don't need their own try/catch around this.
         public async Task SendToUserAsync(User user, string title, string body, NotificationCategory category)
         {
             if (!_isConfigured) return;
@@ -96,8 +93,6 @@ namespace Cars24API.Services
                     ex.MessagingErrorCode == MessagingErrorCode.Unregistered ||
                     ex.MessagingErrorCode == MessagingErrorCode.InvalidArgument)
                 {
-                    // Token is dead (browser data cleared, permission revoked, app
-                    // uninstalled, etc.) - stop trying to send to it.
                     staleTokens.Add(token);
                 }
                 catch (Exception ex)

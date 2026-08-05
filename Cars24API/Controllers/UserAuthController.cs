@@ -34,9 +34,6 @@ public class UserAuthController : ControllerBase
         public string Token { get; set; } = string.Empty;
     }
 
-    // POST /api/UserAuth/{id}/fcm-token
-    // Registers a browser/device's FCM token against this user. Safe to call
-    // repeatedly - duplicate tokens are ignored.
     [HttpPost("{id}/fcm-token")]
     public async Task<IActionResult> RegisterFcmToken(string id, [FromBody] FcmTokenRequest request)
     {
@@ -57,8 +54,6 @@ public class UserAuthController : ControllerBase
         return Ok(new { message = "Token registered." });
     }
 
-    // DELETE /api/UserAuth/{id}/fcm-token?token=...
-    // Called when the user turns push notifications off for this device.
     [HttpDelete("{id}/fcm-token")]
     public async Task<IActionResult> UnregisterFcmToken(string id, [FromQuery] string token)
     {
@@ -75,7 +70,6 @@ public class UserAuthController : ControllerBase
         return NoContent();
     }
 
-    // GET /api/UserAuth/{id}/notification-preferences
     [HttpGet("{id}/notification-preferences")]
     public async Task<IActionResult> GetNotificationPreferences(string id)
     {
@@ -86,7 +80,6 @@ public class UserAuthController : ControllerBase
         return Ok(user.NotificationPreferences ?? new NotificationPreferences());
     }
 
-    // PUT /api/UserAuth/{id}/notification-preferences
     [HttpPut("{id}/notification-preferences")]
     public async Task<IActionResult> UpdateNotificationPreferences(string id, [FromBody] NotificationPreferences preferences)
     {
@@ -106,14 +99,6 @@ public class UserAuthController : ControllerBase
         if (existingUser != null)
             return BadRequest(new { message = "User already exists." });
 
-        // Signup binds straight onto the domain User model for convenience,
-        // which means a crafted request body could otherwise set
-        // server-controlled fields directly - walletBalance, fcmTokens, even
-        // Id. That was a latent issue before; now that a wallet with real
-        // point values exists, sending {..., walletBalance: 999999} in the
-        // signup payload would be free money if left unguarded. Rebuild a
-        // clean User from only the fields a signup request is actually
-        // allowed to supply, rather than trusting the bound object as-is.
         var user = new User
         {
             Email = submitted.Email,
@@ -123,10 +108,6 @@ public class UserAuthController : ControllerBase
             ReferralCode = await _referralService.GenerateUniqueCodeAsync()
         };
 
-        // A referral code can only be attached at signup - there's no
-        // "apply code to my existing account" endpoint, which is deliberate
-        // (see ReferralService for the anti-abuse reasoning). An unknown or
-        // mistyped code is silently ignored rather than failing the signup.
         if (!string.IsNullOrWhiteSpace(submitted.ReferredByCode))
         {
             var referrer = await _userService.GetByReferralCodeAsync(submitted.ReferredByCode.Trim().ToUpperInvariant());
@@ -190,18 +171,6 @@ public class UserAuthController : ControllerBase
         public string NewPassword { get; set; } = string.Empty;
     }
 
-    // POST /api/UserAuth/forgot-password
-    // Generates a one-time, short-lived reset token and stores only its
-    // hash on the user (same reasoning as password hashing - a DB leak
-    // shouldn't hand out usable credentials). Always returns 200 with the
-    // same generic message whether or not the email exists, so this
-    // endpoint can't be used to enumerate registered accounts.
-    //
-    // NOTE: there's no email service wired up in this project yet, so the
-    // raw token is returned in the response body ONLY so the frontend can
-    // route straight to /reset-password without a real inbox. Before this
-    // goes anywhere near production, swap that for actually emailing the
-    // link and stop returning the token in the API response.
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
@@ -214,7 +183,6 @@ public class UserAuthController : ControllerBase
 
         if (user == null)
         {
-            // Deliberately identical response to the "user found" path.
             return Ok(new { message = genericMessage });
         }
 
@@ -226,12 +194,10 @@ public class UserAuthController : ControllerBase
         return Ok(new
         {
             message = genericMessage,
-            // Dev-only convenience until real email delivery exists - see note above.
             devResetToken = rawToken
         });
     }
 
-    // POST /api/UserAuth/reset-password
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
@@ -265,8 +231,6 @@ public class UserAuthController : ControllerBase
 
     private static string GenerateResetToken()
     {
-        // URL-safe, no padding - this gets embedded in a query string on
-        // the reset-password link.
         var bytes = RandomNumberGenerator.GetBytes(32);
         return Convert.ToBase64String(bytes)
             .Replace("+", "-")

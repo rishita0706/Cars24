@@ -7,10 +7,6 @@ using ClosedXML.Excel;
 
 namespace Cars24API.Services
 {
-    // Turns an uploaded CSV / JSON / XLSX file into a list of NewCar rows,
-    // validating each row independently so one bad row doesn't sink the
-    // whole import. Column/field matching is case-insensitive and tolerant
-    // of a couple of common header variants (e.g. "Price (INR)" vs "Price").
     public class NewCarImportService
     {
         private static readonly string[] RequiredFields = { "Brand", "Model", "Price" };

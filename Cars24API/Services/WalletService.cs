@@ -8,11 +8,6 @@ namespace Cars24API.Services
         private readonly IMongoCollection<WalletTransaction> _transactions;
         private readonly UserService _userService;
 
-        // Redeem in blocks of 100 points, minimum 100 - a "clear rule to
-        // prevent misuse" the original spec asked for, stops someone
-        // dribbling out 1-point redemptions to see how the system reacts.
-        // 100 points = ₹100 platform credit (kept 1:1 for simplicity - change
-        // this ratio here if you want a different exchange rate).
         private const int MinRedemption = 100;
         private const int RedemptionBlockSize = 100;
 
@@ -52,7 +47,7 @@ namespace Cars24API.Services
             if (user.WalletBalance < points)
                 return (false, "Insufficient balance.", user.WalletBalance);
 
-            var discountValue = points; // 1:1 points-to-rupee, see class comment
+            var discountValue = points; 
 
             await _userService.IncrementWalletBalanceAsync(userId, -points);
             await _transactions.InsertOneAsync(new WalletTransaction

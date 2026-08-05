@@ -22,7 +22,6 @@ namespace Cars24API.Controllers
             _importService = importService;
         }
 
-        // GET /api/NewCars?search=swift&brand=Maruti&fuel=Petrol&minPrice=500000&page=1&pageSize=12
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] NewCarQuery query)
         {
@@ -39,10 +38,6 @@ namespace Cars24API.Controllers
             return Ok(car);
         }
 
-        // POST /api/NewCars/preview
-        // Parses the file and returns per-row validation results WITHOUT
-        // saving anything - lets the admin UI show a preview + error list
-        // before committing the import.
         [HttpPost("preview")]
         [RequestSizeLimit(MaxFileSizeBytes)]
         public async Task<IActionResult> Preview(IFormFile? file)
@@ -59,10 +54,6 @@ namespace Cars24API.Controllers
             });
         }
 
-        // POST /api/NewCars/upload
-        // Parses the file, saves every valid row, and reports back exactly
-        // which rows (if any) failed and why - a bad row never blocks the
-        // good ones from being imported.
         [HttpPost("upload")]
         [RequestSizeLimit(MaxFileSizeBytes)]
         public async Task<IActionResult> Upload(IFormFile? file)

@@ -32,10 +32,6 @@ public class UserService
         return await _users.Find(u => u.ReferralCode == code).FirstOrDefaultAsync();
     }
 
-    // Targeted field updates, not a full ReplaceOneAsync - these run right
-    // after a wallet credit/debit in the same request in some call sites, and
-    // a full replace using an in-memory User snapshot fetched BEFORE that
-    // credit would silently undo it. Keep these as $inc/$set, not UpdateAsync.
     public async Task IncrementWalletBalanceAsync(string id, int amount)
     {
         var filter = Builders<User>.Filter.Eq(u => u.Id, id);

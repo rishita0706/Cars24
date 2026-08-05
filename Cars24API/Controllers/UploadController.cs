@@ -19,10 +19,6 @@ namespace Cars24API.Controllers
             _env = env;
         }
 
-        // POST /api/Upload/car-images
-        // multipart/form-data, field name "files" (multiple). Returns the
-        // public URLs to store on Car.Images - actual bytes are written to
-        // wwwroot/uploads/cars and served as static files (see Program.cs).
         [HttpPost("car-images")]
         [RequestSizeLimit(MaxFileSizeBytes * MaxFilesPerRequest)]
         public async Task<IActionResult> UploadCarImages(List<IFormFile> files)
