@@ -1,8 +1,15 @@
 // Program.cs
 using Cars24API.Services;
+using Cars24API.Middleware;
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Multipart form limits high enough for the sell-car image uploader
+// (up to 10 images/request) and dataset uploads (up to 10 MB files).
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 80 * 1024 * 1024; // 80 MB
+    options.ValueLengthLimit = int.MaxValue;
+});
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
@@ -37,6 +44,8 @@ builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<WalletService>();
 builder.Services.AddSingleton<ReferralService>();
 builder.Services.AddSingleton<MaintenanceService>();
+builder.Services.AddSingleton<NewCarService>();
+builder.Services.AddSingleton<NewCarImportService>();
 
 builder.Services.AddCors(options =>
 {
@@ -50,24 +59,20 @@ builder.Services.AddCors(options =>
 });
 var app = builder.Build();
 
+// Runs in every environment (dev included) - see ApiExceptionMiddleware for
+// why this replaces the old Production-only UseExceptionHandler block: it
+// now also understands ApiException, so controllers get real status codes
+// and friendly messages instead of everything collapsing to a bare 500.
+app.UseMiddleware<ApiExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-else
-{
-    // Production: don't leak stack traces, return a generic 500 instead.
-    app.UseExceptionHandler(errApp =>
-    {
-        errApp.Run(async context =>
-        {
-            context.Response.StatusCode = 500;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync("{\"message\":\"An unexpected error occurred.\"}");
-        });
-    });
-}
+
+// UploadController.UploadCarImages actually resolve.
+app.UseStaticFiles();
 
 // NOTE: HTTPS redirection is intentionally not used here. The frontend (cars24)
 // is configured via NEXT_PUBLIC_API_URL and may point at plain http:// in local dev,

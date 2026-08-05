@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Cars24API.Models;
 using Cars24API.Services;
+using Cars24API.Middleware;
 using BCrypt.Net;
+using System.Net;
+using System.Security.Cryptography;
 
 namespace Cars24API.Controllers;
 
@@ -173,5 +176,101 @@ public class UserAuthController : ControllerBase
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class ForgotPasswordRequest
+    {
+        public string Email { get; set; } = string.Empty;
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    // POST /api/UserAuth/forgot-password
+    // Generates a one-time, short-lived reset token and stores only its
+    // hash on the user (same reasoning as password hashing - a DB leak
+    // shouldn't hand out usable credentials). Always returns 200 with the
+    // same generic message whether or not the email exists, so this
+    // endpoint can't be used to enumerate registered accounts.
+    //
+    // NOTE: there's no email service wired up in this project yet, so the
+    // raw token is returned in the response body ONLY so the frontend can
+    // route straight to /reset-password without a real inbox. Before this
+    // goes anywhere near production, swap that for actually emailing the
+    // link and stop returning the token in the API response.
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Email))
+            throw new ApiException("Please enter your email address.", HttpStatusCode.BadRequest);
+
+        var user = await _userService.GetByEmailAsync(request.Email.Trim());
+        const string genericMessage =
+            "If an account exists for that email, we've sent password reset instructions.";
+
+        if (user == null)
+        {
+            // Deliberately identical response to the "user found" path.
+            return Ok(new { message = genericMessage });
+        }
+
+        var rawToken = GenerateResetToken();
+        user.PasswordResetTokenHash = BCrypt.Net.BCrypt.HashPassword(rawToken);
+        user.PasswordResetExpiresAt = DateTime.UtcNow.AddMinutes(30);
+        await _userService.UpdateAsync(user.Id, user);
+
+        return Ok(new
+        {
+            message = genericMessage,
+            // Dev-only convenience until real email delivery exists - see note above.
+            devResetToken = rawToken
+        });
+    }
+
+    // POST /api/UserAuth/reset-password
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Email) ||
+            string.IsNullOrWhiteSpace(request.Token) ||
+            string.IsNullOrWhiteSpace(request.NewPassword))
+            throw new ApiException("Email, token, and a new password are all required.", HttpStatusCode.BadRequest);
+
+        if (request.NewPassword.Length < 8)
+            throw new ApiException("Password must be at least 8 characters.", HttpStatusCode.UnprocessableEntity);
+
+        var user = await _userService.GetByEmailAsync(request.Email.Trim());
+        var invalidTokenMessage = "This reset link is invalid or has expired. Please request a new one.";
+
+        if (user == null || string.IsNullOrEmpty(user.PasswordResetTokenHash) || user.PasswordResetExpiresAt == null)
+            throw new ApiException(invalidTokenMessage, HttpStatusCode.BadRequest);
+
+        if (user.PasswordResetExpiresAt < DateTime.UtcNow)
+            throw new ApiException(invalidTokenMessage, HttpStatusCode.BadRequest);
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Token, user.PasswordResetTokenHash))
+            throw new ApiException(invalidTokenMessage, HttpStatusCode.BadRequest);
+
+        user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        user.PasswordResetTokenHash = null;
+        user.PasswordResetExpiresAt = null;
+        await _userService.UpdateAsync(user.Id, user);
+
+        return Ok(new { message = "Password updated. You can now sign in." });
+    }
+
+    private static string GenerateResetToken()
+    {
+        // URL-safe, no padding - this gets embedded in a query string on
+        // the reset-password link.
+        var bytes = RandomNumberGenerator.GetBytes(32);
+        return Convert.ToBase64String(bytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .Replace("=", "");
     }
 }

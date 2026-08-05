@@ -3,9 +3,6 @@ using MongoDB.Driver;
 
 namespace Cars24API.Services
 {
-    // Single shared MongoClient/database for the whole app.
-    // Every service takes a MongoContext dependency and reads its
-    // collection from here instead of opening its own MongoClient.
     public class MongoContext
     {
         public IMongoCollection<Car> Cars { get; }
@@ -13,6 +10,7 @@ namespace Cars24API.Services
         public IMongoCollection<Booking> Bookings { get; }
         public IMongoCollection<Appointment> Appointments { get; }
         public IMongoCollection<WalletTransaction> WalletTransactions { get; }
+        public IMongoCollection<NewCar> NewCars { get; }
 
         public MongoContext(IConfiguration configuration)
         {
@@ -34,6 +32,7 @@ namespace Cars24API.Services
             Bookings = database.GetCollection<Booking>("Bookings");
             Appointments = database.GetCollection<Appointment>("Appointments");
             WalletTransactions = database.GetCollection<WalletTransaction>("WalletTransactions");
+            NewCars = database.GetCollection<NewCar>("NewCars");
         }
     }
 }
