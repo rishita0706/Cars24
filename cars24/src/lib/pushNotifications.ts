@@ -10,10 +10,6 @@ export type PushPermissionResult =
   | { status: "denied" }
   | { status: "unsupported" };
 
-// Prompts the browser's native permission dialog, retrieves an FCM
-// registration token for this browser, and registers it against the given
-// user on the backend. Call this from a real user gesture (a button click) -
-// browsers ignore/auto-deny permission requests that aren't user-initiated.
 export async function enablePushNotifications(userId: string): Promise<PushPermissionResult> {
   if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) {
     return { status: "unsupported" };
@@ -65,8 +61,7 @@ export async function disablePushNotifications(userId: string): Promise<void> {
   try {
     await unregisterFcmToken(userId, token);
   } catch {
-    // best-effort - if this fails the token just goes stale server-side and
-    // gets cleaned up automatically the next time a send to it fails
+    
   } finally {
     try {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -76,11 +71,6 @@ export async function disablePushNotifications(userId: string): Promise<void> {
   }
 }
 
-// The service worker's onBackgroundMessage (see pages/api/firebase-messaging-sw.js.ts)
-// only fires when the Cars24 tab is NOT focused/open. While the tab IS open
-// and focused, FCM delivers the message straight to this listener instead -
-// without it, a push sent while you're actively using the site would arrive
-// but never visibly show anything. Returns an unsubscribe function.
 export async function listenForForegroundMessages(
   onNotification: (title: string, body: string) => void
 ): Promise<() => void> {

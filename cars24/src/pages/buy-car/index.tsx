@@ -14,7 +14,6 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import React, { useEffect, useState } from "react";
 
-// Leaflet touches `window`, so this must never be rendered on the server.
 const NearbyHubsMap = dynamic(() => import("@/components/location/NearbyHubsMap"), {
   ssr: false,
 });
@@ -46,7 +45,6 @@ function LoaderCard() {
   );
 }
 
-// Flattens a search result's nested `specs` into the flat shape the card UI renders.
 function toCardData(item: SearchResultItem): CarCardData {
   const { car } = item;
   return {
@@ -70,8 +68,6 @@ const BuyCarPage = () => {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
-  // Geo-fencing default: once a city is known, results are restricted to it
-  // until the user explicitly opts out.
   const [restrictToCity, setRestrictToCity] = useState(true);
 
   const [cars, setCars] = useState<CarCardData[] | null>(null);
@@ -79,15 +75,12 @@ const BuyCarPage = () => {
   const [totalResults, setTotalResults] = useState(0);
   const [error, setError] = useState<string | null>(null);
   
-  // Hubs & Map filter state
   const [hubs, setHubs] = useState<ServiceHub[]>([]);
   const [activeHubType, setActiveHubType] = useState<string>("All");
   const [selectedHubId, setSelectedHubId] = useState<string | null>(null);
 
-  // Debounce free-text query so every keystroke doesn't trigger a full search
   const debouncedQuery = useDebounce(query, 350);
 
-  // Reset to page 1 whenever search filters or geo-fencing changes
   useEffect(() => {
     setPage(1);
   }, [debouncedQuery, filters, restrictToCity, city?.name]);
@@ -99,7 +92,6 @@ const BuyCarPage = () => {
 
     searchCars({
       query: debouncedQuery || undefined,
-      // Geo-fencing: only listings in the detected/selected city
       location: restrictToCity && city ? city.name : undefined,
       fuel: filters.fuel.length > 0 ? filters.fuel : undefined,
       transmission: filters.transmission.length > 0 ? filters.transmission : undefined,
@@ -147,7 +139,6 @@ const BuyCarPage = () => {
     city?.name,
   ]);
 
-  // Fetch nearby hubs for the current city
   useEffect(() => {
     if (!city) {
       setHubs([]);

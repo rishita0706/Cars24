@@ -9,7 +9,6 @@ type LocationContextType = {
   source: LocationSource;
   status: LocationStatus;
   error: string | null;
-  // Best-effort human-readable label from reverse geocoding, e.g. "Sector 62, Noida".
   detectedLabel: string | null;
   detect: () => void;
   setCity: (cityName: string) => void;
@@ -98,7 +97,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
       // Storage unavailable or corrupt
     }
     detect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -1,11 +1,3 @@
-// src/lib/geo.ts
-//
-// Location detection built entirely on free, keyless APIs:
-//  - Browser Geolocation API   (native, no key, needs user permission)
-//  - Nominatim (OpenStreetMap) (free reverse geocoding, no key)
-//  - ipapi.co                  (free IP-based geolocation, no key, fallback
-//                                when Geolocation is denied/unavailable)
-
 export type Coordinates = { lat: number; lng: number };
 
 export type City = {
@@ -14,9 +6,6 @@ export type City = {
   lng: number;
 };
 
-// The cities Cars24 actually has listings/hubs in. Detected coordinates are
-// snapped to whichever of these is nearest, so geo-fencing always matches a
-// city the rest of the app understands (Car.Location free text, ServiceHub.City).
 export const CITIES: City[] = [
   { name: "Delhi", lat: 28.6139, lng: 77.209 },
   { name: "Gurugram", lat: 28.4595, lng: 77.0266 },
@@ -71,8 +60,6 @@ async function ipGeolocateCoordinates(): Promise<Coordinates | null> {
   }
 }
 
-// Browser Geolocation first (accurate, needs permission); falls back to
-// IP-based geolocation if denied, unsupported, or it times out.
 export async function detectLocation(): Promise<{
   coords: Coordinates;
   source: "gps" | "ip";
@@ -89,13 +76,6 @@ export async function detectLocation(): Promise<{
   }
 }
 
-// Best-effort, display-only reverse geocoding via Nominatim - gives a
-// human-readable label like "Sector 62, Noida" to show alongside the
-// snapped city. Never blocks/fails the actual geo-fencing, which relies on
-// nearestCity() above, not on this returning anything.
-//
-// Nominatim usage policy: https://operations.osmfoundation.org/policies/nominatim/
-// - called once per manual "detect" action only, never polled.
 export async function reverseGeocodeLabel(coords: Coordinates): Promise<string | null> {
   try {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${coords.lat}&lon=${coords.lng}&zoom=14&addressdetails=1`;

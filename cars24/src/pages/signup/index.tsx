@@ -20,13 +20,10 @@ const index = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // A shared referral link looks like /signup?ref=ABC123 - prefill (but keep
-  // editable, in case someone was told a code verbally instead).
   useEffect(() => {
     if (typeof navigate.query.ref === "string") {
       setFormData((prev) => ({ ...prev, referredByCode: navigate.query.ref as string }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate.query.ref]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

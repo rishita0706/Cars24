@@ -1,4 +1,3 @@
-// src/lib/Carapi.ts
 import { apiFetch } from "./apiClient";
 
 const RESOURCE = "/api/Car";
@@ -36,17 +35,6 @@ export const getcarByid = async (id: string) => {
 export const getcarSummaries = async () => {
   return apiFetch(`${RESOURCE}/summaries`);
 };
-
-// ---------------------------------------------------------------------------
-// Search / Suggestions
-// Backed by GET /api/Car/search and GET /api/Car/suggestions (CarSearchService).
-//
-// NOTE: as of this audit, CarSearchService.SearchAsync on the backend returns
-// a bare List<SearchResult>, NOT the paginated SearchResponse shape below.
-// Wiring this up in the UI will currently break on `response.results` being
-// undefined - fix the backend to return SearchResponse (with pagination
-// applied) before connecting this to any search UI.
-// ---------------------------------------------------------------------------
 
 export type CarFull = {
   id: string;
@@ -111,9 +99,6 @@ export const searchCars = async (
   const query = new URLSearchParams();
 
   if (params.query) query.append("query", params.query);
-  // ASP.NET Core binds repeated query keys into a List<string>, so each item
-  // needs its own "fuels="/"transmissions=" entry rather than a single
-  // comma-joined value - matches SearchRequest.Fuels/Transmissions on the backend.
   if (Array.isArray(params.fuel)) {
     params.fuel.forEach((f) => query.append("fuels", f));
   } else if (params.fuel) {
@@ -138,9 +123,6 @@ export const searchCars = async (
   if (params.page !== undefined) query.append("page", String(params.page));
   if (params.pageSize !== undefined) query.append("pageSize", String(params.pageSize));
   if (params.sortBy) query.append("sortBy", params.sortBy);
-  // ASP.NET Core binds repeated query keys into a List<string>, so each item
-  // needs its own "features=" / "highlights=" entry rather than a single
-  // comma-joined value.
   params.features?.forEach((f) => query.append("features", f));
   params.highlights?.forEach((h) => query.append("highlights", h));
 

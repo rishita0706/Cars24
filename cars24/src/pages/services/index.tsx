@@ -110,9 +110,6 @@ const ServicesPage = () => {
       return;
     }
     setBookingId(service.id);
-    // No dedicated service-booking backend endpoint exists yet - this
-    // records intent and gives clear feedback rather than silently doing
-    // nothing or pretending a booking was created server-side.
     setTimeout(() => {
       toast.success(`${service.title} request received. Our team will call you shortly.`);
       setBookingId(null);

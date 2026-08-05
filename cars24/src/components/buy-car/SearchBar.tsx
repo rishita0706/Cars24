@@ -10,10 +10,6 @@ type Props = {
   onSubmit: (value: string) => void;
 };
 
-// Controlled search input with a debounced auto-suggest dropdown.
-// `value`/`onChange` are lifted to the parent (buy-car page) so the typed
-// text can also drive the debounced search-as-you-type request there;
-// this component only owns the suggestion list + dropdown open state.
 export default function SearchBar({ value, onChange, onSubmit }: Props) {
   const [suggestions, setSuggestions] = useState<CarSuggestion[]>([]);
   const [open, setOpen] = useState(false);

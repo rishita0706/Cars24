@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 
-// Returns `value`, but only updates after `delayMs` of no further changes.
 // Used to avoid firing an API call on every keystroke.
 export function useDebounce<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);

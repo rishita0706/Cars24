@@ -25,7 +25,6 @@ export default function WalletCard({ userId }: Props) {
 
   useEffect(() => {
     loadWallet();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const referralLink =

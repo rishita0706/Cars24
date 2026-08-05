@@ -1,9 +1,3 @@
-// src/lib/uploadApi.ts
-//
-// File-upload calls need upload progress, which plain fetch() can't report -
-// so these use XMLHttpRequest directly instead of going through apiFetch.
-// Error shape is kept consistent with apiClient's ApiError so callers can
-// use the same notifyError() helper either way.
 import { API_BASE_URL, ApiError } from "./apiClient";
 
 function uploadWithProgress<T = any>(

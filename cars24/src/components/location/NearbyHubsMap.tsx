@@ -17,8 +17,8 @@ const TYPE_LABEL: Record<string, string> = {
 
 const TYPE_COLOR: Record<string, string> = {
   Hub: "#2563eb", // blue
-  ServiceCenter: "#ea580c", // orange
-  PickupPoint: "#16a34a", // green
+  ServiceCenter: "#ea580c", 
+  PickupPoint: "#16a34a", 
 };
 
 export default function NearbyHubsMap({ center, hubs, selectedHubId, onSelectHub }: Props) {
@@ -26,7 +26,6 @@ export default function NearbyHubsMap({ center, hubs, selectedHubId, onSelectHub
   const mapRef = useRef<any>(null);
   const markersRef = useRef<Map<string, any>>(new Map());
 
-  // Ensure Leaflet CSS stylesheet is loaded into document head
   useEffect(() => {
     if (typeof document !== "undefined" && !document.getElementById("leaflet-css")) {
       const link = document.createElement("link");
@@ -43,7 +42,6 @@ export default function NearbyHubsMap({ center, hubs, selectedHubId, onSelectHub
     import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
 
-      // Fix missing leaflet marker icons in bundled environment
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
@@ -63,7 +61,6 @@ export default function NearbyHubsMap({ center, hubs, selectedHubId, onSelectHub
         mapRef.current.setView([center.lat, center.lng], 11);
       }
 
-      // Clear previous markers
       markersRef.current.forEach((marker) => marker.remove());
       markersRef.current.clear();
 
@@ -124,7 +121,6 @@ export default function NearbyHubsMap({ center, hubs, selectedHubId, onSelectHub
     };
   }, [center, hubs, onSelectHub]);
 
-  // Handle programmatic marker selection
   useEffect(() => {
     if (selectedHubId && markersRef.current.has(selectedHubId)) {
       const marker = markersRef.current.get(selectedHubId);
